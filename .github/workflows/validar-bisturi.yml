@@ -1,0 +1,25 @@
+name: Validar BISTURI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Validar archivos esenciales
+        run: |
+          test -s README.md
+          test -s NYX_BISTURI_Jardin_2026-08-13.md
+
+          echo "✓ README.md presente"
+          echo "✓ Jardín presente"
+          echo "✓ BISTURI validado"
