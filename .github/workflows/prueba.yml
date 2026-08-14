@@ -1,0 +1,20 @@
+name: Prueba BISTURI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  prueba:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar repositorio
+        uses: actions/checkout@v4
+
+      - name: Comprobar BISTURI
+        run: |
+          echo "BISTURI está vivo."
+          echo "Repositorio: $GITHUB_REPOSITORY"
+          echo "Rama: $GITHUB_REF_NAME"
+          ls -la
