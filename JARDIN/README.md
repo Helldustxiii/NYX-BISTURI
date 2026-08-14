@@ -19,8 +19,8 @@ No todo debe conservarse. El criterio decide qué permanece.
 
 ## Estructura
 
-Los registros diarios se almacenan por fecha.
+Los registros diarios se almacenan dentro de `BISTURÍ`, organizados por fecha.
 
 Formato:
 
-`NYX_BISTURI_Jardin_AAAA-MM-DD.md`
+`BISTURÍ/NYX_BISTURI_Jardin_AAAA-MM-DD.md`
