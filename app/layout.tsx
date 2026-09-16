@@ -1,4 +1,4 @@
-import { SpeedInsights } from '@vercel/speed-insights/next'
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -15,7 +15,6 @@ export default function RootLayout({
     <html lang="es">
       <body>
         {children}
-        <SpeedInsights />
       </body>
     </html>
   )
