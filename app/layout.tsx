@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 
 export const metadata: Metadata = {
   title: 'NYX-BISTURI',
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="es">
       <body>
         {children}
+        <Analytics />
       </body>
     </html>
   )
