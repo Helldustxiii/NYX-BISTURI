@@ -12,9 +12,10 @@ jobs:
       - name: Comprobar repositorio
         uses: actions/checkout@v4
 
-      - name: Comprobar BISTURI
+      - name: Ejecutar prueba de humo
         run: |
-          echo "BISTURI está vivo."
-          echo "Repositorio: $GITHUB_REPOSITORY"
-          echo "Rama: $GITHUB_REF_NAME"
-          ls -la
+          set -euo pipefail
+          test -d BISTURI/sistema-prompts
+          test -s BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
+          test -s BISTURI/sistema-prompts/00-principios-bisturi.md
+          echo "BISTURI: prueba de humo superada."
