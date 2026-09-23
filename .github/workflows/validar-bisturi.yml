@@ -15,11 +15,59 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Validar archivos esenciales
+      - name: Validar estructura esencial
         run: |
+          set -euo pipefail
+
           test -s README.md
           test -s NYX_BISTURI_Jardin_2026-08-13.md
 
-          echo "✓ README.md presente"
-          echo "✓ Jardín presente"
+          for file in \
+            BISTURI/sistema-prompts/00-principios-bisturi.md \
+            BISTURI/sistema-prompts/01-comprender.md \
+            BISTURI/sistema-prompts/02-decidir.md \
+            BISTURI/sistema-prompts/03-ejecutar.md \
+            BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
+          do
+            test -s "$file"
+          done
+
+      - name: Detectar arquitectura obsoleta
+        run: |
+          set -euo pipefail
+
+          if grep -RniE 'holaOS|elegir camino [óo]ptimo|camino [óo]ptimo' \
+            BISTURI/sistema-prompts; then
+            echo "::error::Se detectó terminología de la arquitectura obsoleta."
+            exit 1
+          fi
+
+      - name: Validar principios actuales
+        run: |
+          set -euo pipefail
+
+          grep -q 'Primero entender y después actuar' BISTURI/sistema-prompts/00-principios-bisturi.md
+          grep -q 'CONFIRMADO' BISTURI/sistema-prompts/00-principios-bisturi.md
+          grep -q 'PLAUSIBLE' BISTURI/sistema-prompts/00-principios-bisturi.md
+          grep -q 'FALLIDO-INCIERTO' BISTURI/sistema-prompts/00-principios-bisturi.md
+          grep -q 'No sé todavía' BISTURI/sistema-prompts/00-principios-bisturi.md
+
+      - name: Validar coherencia de protocolos
+        run: |
+          set -euo pipefail
+
+          for file in BISTURI/sistema-prompts/*.md; do
+            grep -q 'CONFIRMADO' "$file" || {
+              echo "::error::$file no contiene el estado CONFIRMADO."
+              exit 1
+            }
+          done
+
+          grep -q 'Primero entender y después actuar' BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
+          grep -q 'La anticipación nunca debe sustituir a la evidencia' BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
+
+          echo "✓ Estructura esencial"
+          echo "✓ Arquitectura obsoleta ausente"
+          echo "✓ Principios actuales presentes"
+          echo "✓ Protocolos coherentes"
           echo "✓ BISTURI validado"
