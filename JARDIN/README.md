@@ -4,7 +4,7 @@ Espacio de continuidad, evolución y registro del sistema NYX / BISTURÍ.
 
 ## Principio
 
-> Primero comprender. Después decidir.
+> Primero entender y después actuar.
 
 ## Función
 
