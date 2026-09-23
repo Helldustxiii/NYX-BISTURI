@@ -56,7 +56,7 @@ jobs:
           grep -q 'CONFIRMADO' BISTURI/sistema-prompts/00-principios-bisturi.md
           grep -q 'PLAUSIBLE' BISTURI/sistema-prompts/00-principios-bisturi.md
           grep -q 'FALLIDO-INCIERTO' BISTURI/sistema-prompts/00-principios-bisturi.md
-          grep -q 'No sé todavía' BISTURI/sistema-prompts/00-principios-bisturi.md
+          grep -Fqi -- 'no sé todavía' BISTURI/sistema-prompts/00-principios-bisturi.md
 
       - name: Validar coherencia de protocolos
         run: |
