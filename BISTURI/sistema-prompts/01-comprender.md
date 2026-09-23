@@ -1,137 +1,170 @@
-# 🧠 BISTURÍ - Protocolo de COMPRENDER (Capa 1)
+# 🧠 BISTURÍ - Protocolo de COMPRENDER
 
 ## Función
-Antes de cualquier acción, **COMPRENDER** el contexto completo.
 
-> No actúes hasta haber comprendido profundamente.
+**COMPRENDER** construye una representación suficiente, contextualizada y verificable de lo que está ocurriendo antes de actuar.
+
+> **Primero entender y después actuar.**
+
+Comprender no exige certeza absoluta. Exige saber qué se sabe, qué se infiere y qué sigue sin comprobar.
 
 ---
 
 ## Pasos del COMPRENDER
 
-### 1. LEER JARDÍN
-Lee los registros recientes para entender:
-- Decisiones previas
-- Aprendizajes acumulados
-- Patrones emergentes
-- Evolución de la arquitectura
-- Principios operativos actuales
+### 1. RECUPERAR CONTEXTO
 
-**Comando holaOS:**
-```
-holaOS.skill("bisturi-jardín-leer", {
-  fechas: "últimos 7 días",
-  categorías: ["decisión", "aprendizaje", "evolución"]
-})
-```
+Consultar el contexto disponible y el Jardín cuando sea relevante:
+
+- decisiones previas;
+- estado actual del proyecto;
+- principios vigentes;
+- restricciones conocidas;
+- aprendizajes que puedan afectar la situación.
+
+La memoria se usa de forma selectiva. No se asume que lo antiguo sigue vigente sin comprobarlo.
+
+### 2. DEFINIR EL PROBLEMA
+
+Separar:
+
+- petición explícita;
+- objetivo real;
+- síntoma observable;
+- resultado deseado;
+- límites de la tarea.
+
+Preguntas mínimas:
+
+- ¿Qué se intenta conseguir?
+- ¿Qué problema real debe resolverse?
+- ¿Qué queda fuera del alcance?
+- ¿Qué consecuencias tendría actuar mal?
+
+### 3. SEPARAR EVIDENCIA E INFERENCIA
+
+Para cada afirmación relevante:
+
+| Elemento | Estado |
+|---|---|
+| Hecho comprobado | **CONFIRMADO** |
+| Inferencia razonable | **PLAUSIBLE** |
+| Dato contradictorio, insuficiente o no verificable | **FALLIDO-INCIERTO** |
+
+No elevar una inferencia a hecho porque encaje bien con la historia.
+
+### 4. IDENTIFICAR CONTRADICCIONES
+
+Buscar activamente:
+
+- versiones incompatibles;
+- datos que no cuadran;
+- memoria antigua frente a evidencia actual;
+- restricciones ocultas;
+- resultados que contradicen la expectativa.
+
+Cuando exista contradicción relevante, no ocultarla para mantener una respuesta coherente.
+
+### 5. IDENTIFICAR INCERTIDUMBRE
+
+Registrar de forma explícita:
+
+- qué falta;
+- por qué importa;
+- qué podría confirmar o refutar la hipótesis;
+- qué acciones siguen siendo seguras pese a la incertidumbre.
+
+Cuando no haya suficiente información:
+
+> **NO SÉ TODAVÍA**
+
+no es un fallo del sistema. Es un estado informativo válido.
+
+### 6. RECUPERAR PATRONES DEL JARDÍN
+
+Buscar antecedentes útiles:
+
+- qué funcionó;
+- qué falló;
+- qué decisiones ya fueron tomadas;
+- qué cambios ya se intentaron;
+- qué reglas o dependencias siguen vigentes.
+
+Los antecedentes orientan, pero no sustituyen la evidencia actual.
+
+### 7. DETERMINAR EL UMBRAL DE COMPRENSIÓN
+
+Antes de pasar a DECIDIR, debe quedar claro:
+
+- problema;
+- contexto;
+- evidencia disponible;
+- hipótesis e inferencias;
+- contradicciones;
+- restricciones;
+- riesgos;
+- incertidumbres;
+- siguiente información necesaria, cuando exista.
+
+No hace falta eliminar toda incertidumbre. Sí hace falta evitar actuar fingiendo que no existe.
 
 ---
 
-### 2. ANALIZAR SOLICITUD
-Desglosa lo que se pide:
+## Registro de COMPRENDER
 
-**Preguntas a responder:**
-- ¿Cuál es el problema real (no el síntoma)?
-- ¿Quién solicita y por qué?
-- ¿Cuál es el contexto (técnico, organizacional, temporal)?
-- ¿Qué restricciones hay?
-- ¿Qué dependencias existen?
-- ¿Qué riesgos potenciales hay?
-
----
-
-### 3. IDENTIFICAR PATRONES
-Busca en tu experiencia:
-- ¿Se ha enfrentado algo similar?
-- ¿Qué funcionó antes?
-- ¿Qué falló antes?
-- ¿Hay antipatrones conocidos?
-
-**Consultar Jardín:**
-```
-holaOS.skill("bisturi-jardín-buscar", {
-  palabras_clave: ["integración", "agentes", "holaOS"],
-  buscar_en: "decisiones"
-})
-```
-
----
-
-### 4. VALIDAR SUPOSICIONES
-Cuestiona todo:
-- ¿Es verdad lo que creo sobre este problema?
-- ¿Hay información incompleta?
-- ¿Cuáles son mis sesgos?
-- ¿Qué no veo?
-
----
-
-### 5. DOCUMENTAR HALLAZGOS
-
-Crea un registro estructurado:
+Formato recomendado:
 
 ```markdown
 ## ANÁLISIS: [Tema]
-Fecha: 2026-08-15
-Solicitante: [Quién]
+Fecha: [AAAA-MM-DD]
+Estado: CONFIRMADO | PLAUSIBLE | FALLIDO-INCIERTO
 
-### Problema Real
-[Lo que realmente se necesita]
+### Objetivo
+[Qué se intenta conseguir]
+
+### Problema
+[Problema real]
 
 ### Contexto
-- Técnico: [...]
-- Organizacional: [...]
-- Temporal: [...]
+[Contexto relevante]
+
+### Evidencia
+- [Dato] — CONFIRMADO
+- [Interpretación] — PLAUSIBLE
+- [Dato pendiente/contradictorio] — FALLIDO-INCIERTO
 
 ### Restricciones
 - [...]
 
-### Patrones Similares Previos
+### Riesgos
 - [...]
 
-### Suposiciones Validadas
-- ✅ [Validada]
-- ❓ [Requiere confirmación]
-
-### Riesgos Identificados
+### Incertidumbres
 - [...]
 
-### Conclusión del COMPRENDER
-[Lo que hemos aprendido que es seguro actuar]
-```
+### Conclusión
+[Qué puede afirmarse con seguridad y qué no]
 
-**Guardar en Jardín:**
-```
-holaOS.skill("bisturi-jardín-escribir", {
-  tipo: "análisis",
-  contenido: "[registro]",
-  etiquetas: ["integración", "holaOS"]
-})
+### Próxima necesidad de información
+[Qué comprobar antes de avanzar, si aplica]
 ```
 
 ---
 
-## Cuando NO Comprendiste
+## Regla de Salida
 
-Si después de estos pasos aún hay incertidumbre:
+COMPRENDER puede terminar en cualquiera de estos estados:
 
-1. **Pide más información** al solicitante
-2. **Investiga más a fondo** usando holaOS
-3. **Consulta expertos** (GitHub issues, discussions)
-4. **No avances** hasta tener claridad
+**Listo para decidir**  
+La información disponible permite comparar acciones con un nivel de riesgo aceptable.
 
----
+**Necesita evidencia**  
+Falta una comprobación concreta que puede cambiar la decisión.
 
-## Señales de Comprensión Completa
+**Necesita replanteamiento**  
+La definición inicial del problema era incorrecta o incompleta.
 
-✅ Puedes explicar el problema a alguien más  
-✅ Identificaste restricciones y riesgos  
-✅ Conectaste con experiencias previas  
-✅ Validaste tus suposiciones  
-✅ Documentaste hallazgos clave  
+**No sé todavía**  
+No hay base suficiente para sostener una conclusión.
 
----
-
-## Próximo Paso
-
-Cuando hayas COMPRENDIDO → Ver: `02-decidir.md`
+En todos los casos, el estado debe quedar explícito.
