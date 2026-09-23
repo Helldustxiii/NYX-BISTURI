@@ -15,12 +15,21 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
       - name: Validar estructura esencial
         run: |
           set -euo pipefail
-
+          test -s AGENTS.md
           test -s README.md
           test -s NYX_BISTURI_Jardin_2026-08-13.md
+          test -s package.json
+          test -s package-lock.json
+          test -s next.config.js
 
           for file in \
             BISTURI/sistema-prompts/00-principios-bisturi.md \
@@ -35,9 +44,7 @@ jobs:
       - name: Detectar arquitectura obsoleta
         run: |
           set -euo pipefail
-
-          if grep -RniE 'holaOS|elegir camino [óo]ptimo|camino [óo]ptimo' \
-            BISTURI/sistema-prompts; then
+          if grep -RniE 'holaOS|elegir camino [óo]ptimo|camino [óo]ptimo' BISTURI/sistema-prompts; then
             echo "::error::Se detectó terminología de la arquitectura obsoleta."
             exit 1
           fi
@@ -45,7 +52,6 @@ jobs:
       - name: Validar principios actuales
         run: |
           set -euo pipefail
-
           grep -q 'Primero entender y después actuar' BISTURI/sistema-prompts/00-principios-bisturi.md
           grep -q 'CONFIRMADO' BISTURI/sistema-prompts/00-principios-bisturi.md
           grep -q 'PLAUSIBLE' BISTURI/sistema-prompts/00-principios-bisturi.md
@@ -55,19 +61,35 @@ jobs:
       - name: Validar coherencia de protocolos
         run: |
           set -euo pipefail
-
           for file in BISTURI/sistema-prompts/*.md; do
             grep -q 'CONFIRMADO' "$file" || {
               echo "::error::$file no contiene el estado CONFIRMADO."
               exit 1
             }
           done
-
           grep -q 'Primero entender y después actuar' BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
           grep -q 'La anticipación nunca debe sustituir a la evidencia' BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
 
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build de producción
+        run: npm run build
+
+      - name: Resultado
+        run: |
+          echo "✓ AGENTS.md presente"
           echo "✓ Estructura esencial"
           echo "✓ Arquitectura obsoleta ausente"
           echo "✓ Principios actuales presentes"
           echo "✓ Protocolos coherentes"
+          echo "✓ Typecheck"
+          echo "✓ Lint"
+          echo "✓ Build de producción"
           echo "✓ BISTURI validado"
