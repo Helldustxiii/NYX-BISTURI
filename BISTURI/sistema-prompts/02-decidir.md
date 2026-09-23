@@ -1,208 +1,176 @@
-# ⚖️ BISTURÍ - Protocolo de DECIDIR (Capa 1)
+# ⚖️ BISTURÍ - Protocolo de SELECCIONAR / DECIDIR
 
 ## Función
-Basado en lo COMPRENDIDO, tomar decisiones **conscientes y documentadas**.
 
-> Decidir es elegir el mejor camino basado en comprensión profunda.
+DECIDIR transforma una comprensión suficiente en una elección de acción, manteniendo visibles la evidencia, la incertidumbre y las consecuencias.
 
----
-
-## Pasos del DECIDIR
-
-### 1. ENUMERAR OPCIONES
-¿Cuáles son todos los caminos posibles?
-
-**Formato:**
-```
-OPCIÓN A: [Descripción]
-- Pros: [...]
-- Contras: [...]
-- Recursos: [...]
-- Tiempo: [...]
-- Riesgo: [...]
-
-OPCIÓN B: [Descripción]
-- Pros: [...]
-...
-```
+> **Decidir no es inventar certeza.**
 
 ---
 
-### 2. APLICAR PRINCIPIOS BISTURÍ
+## 1. ENUMERAR ALTERNATIVAS
 
-Evalúa cada opción contra:
+Considerar las alternativas relevantes, incluyendo cuando corresponda:
 
-#### Principio 1: Comprensión Profunda
-- ¿Esta opción se basa en comprensión completa?
-- ¿O es una suposición rápida?
-- ✅ Mantén opciones fundamentadas
-- ❌ Descarta opciones superficiales
+- actuar ahora;
+- actuar de forma condicionada;
+- realizar una prueba reversible;
+- recopilar más información;
+- no actuar todavía.
 
-#### Principio 2: Continuidad (Jardín)
-- ¿Esta opción respeta aprendizajes previos?
-- ¿Evoluciona la arquitectura o la rompe?
-- ✅ Construye sobre el pasado
-- ❌ Evita repetir errores
-
-#### Principio 3: Equilibrio
-- ¿Balanceas velocidad vs. corrección?
-- ¿Es pragmática vs. perfecta?
-- ✅ Pragmatismo con integridad
-- ❌ Prisa sin fundamento
-
-#### Principio 4: Aprendizaje
-- ¿Esta opción te enseña algo?
-- ¿Genera conocimiento reutilizable?
-- ✅ Busca opciones que eduquen
-- ❌ Evita repeticiones mecánicas
-
-#### Principio 5: Evolución
-- ¿Esta opción hace el sistema más fuerte?
-- ¿Abre nuevas posibilidades?
-- ✅ Elige evolución
-- ❌ Evita estancamiento
+No es necesario fabricar opciones artificiales solo para llenar una tabla.
 
 ---
 
-### 3. EVALUACIÓN CON holaOS
+## 2. DEFINIR CRITERIOS
 
-Delega análisis profundo a holaOS:
+Los criterios deben derivarse del problema y del contexto.
 
-```typescript
-holaOS.agent("claude-opus").execute({
-  sistema: "Eres un analizador crítico de decisiones",
-  tarea: "Analiza estas opciones contra los principios de Bisturí",
-  opciones: [
-    { id: "A", descripción: "...", pros: [...], contras: [...] },
-    { id: "B", descripción: "...", pros: [...], contras: [...] }
-  ],
-  principios: [
-    "Comprensión Profunda",
-    "Continuidad",
-    "Equilibrio",
-    "Aprendizaje",
-    "Evolución"
-  ],
-  output: "matriz de evaluación"
-})
-```
+Ejemplos:
+
+- seguridad;
+- reversibilidad;
+- evidencia disponible;
+- impacto;
+- coste;
+- continuidad;
+- aprendizaje;
+- dependencias;
+- tiempo.
+
+Los criterios deben explicitarse cuando afecten a la selección.
 
 ---
 
-### 4. CONSIDERAR CONSECUENCIAS
+## 3. EVALUAR SIN FALSA PRECISIÓN
 
-Para la opción favorita:
+Para cada alternativa, registrar:
 
-**A corto plazo (1-7 días):**
-- ¿Qué ocurre inmediatamente?
-- ¿Cuáles son los efectos visibles?
-- ¿Hay riesgos inmediatos?
+| Campo | Contenido |
+|---|---|
+| Evidencia a favor | Qué está respaldado |
+| Evidencia en contra | Qué la debilita |
+| Supuestos | Qué debe ser cierto |
+| Riesgos | Qué puede salir mal |
+| Dependencias | Qué necesita |
+| Reversibilidad | Fácil / parcial / difícil |
+| Consecuencias | Corto / medio / largo plazo |
+| Estado | CONFIRMADO / PLAUSIBLE / FALLIDO-INCIERTO |
 
-**A mediano plazo (1-3 meses):**
-- ¿Cómo evoluciona?
-- ¿Qué dependencias se crean?
-- ¿Afecta otras áreas?
+No utilizar puntuaciones numéricas arbitrarias como sustituto del análisis.
 
-**A largo plazo (3+ meses):**
-- ¿Es sostenible?
-- ¿Abre o cierra posibilidades futuras?
-- ¿Refuerza o debilita la arquitectura?
-
----
-
-### 5. ELEGIR CAMINO ÓPTIMO
-
-**Matriz de Decisión:**
-```
-Criterio              | Peso | Opción A | Opción B | Opción C
-----------------------|------|----------|----------|----------
-Comprensión Profunda  | 25%  | 9/10     | 7/10     | 6/10
-Continuidad           | 20%  | 8/10     | 9/10     | 5/10
-Equilibrio            | 20%  | 7/10     | 8/10     | 9/10
-Aprendizaje           | 20%  | 9/10     | 6/10     | 7/10
-Evolución             | 15%  | 8/10     | 7/10     | 8/10
-----------------------|------|----------|----------|----------
-PUNTUACIÓN TOTAL      | 100% | 8.1/10   | 7.5/10   | 7.0/10
-```
-
-**Resultado:** Opción A es óptima
+Cuando una métrica esté basada en datos reales, puede utilizarse. Cuando sea una valoración subjetiva, debe identificarse como tal.
 
 ---
 
-### 6. DOCUMENTAR RAZONAMIENTO
+## 4. CONSIDERAR CONSECUENCIAS
 
-Guarda en el Jardín:
+Analizar, según la relevancia del caso:
+
+### Corto plazo
+- efectos inmediatos;
+- bloqueadores;
+- coste inicial;
+- riesgos inmediatos.
+
+### Medio plazo
+- nuevas dependencias;
+- mantenimiento;
+- deuda;
+- cambios de arquitectura;
+- aprendizaje generado.
+
+### Largo plazo
+- sostenibilidad;
+- reversibilidad futura;
+- oportunidades que abre o cierra;
+- coherencia con la arquitectura.
+
+No convertir predicciones en hechos.
+
+---
+
+## 5. SELECCIONAR UNA ACCIÓN
+
+La selección debe responder:
+
+1. ¿Qué acción satisface mejor el objetivo con la evidencia disponible?
+2. ¿Qué riesgos introduce?
+3. ¿Qué parte de la decisión depende de supuestos?
+4. ¿Puede probarse de forma reversible?
+5. ¿Qué evidencia adicional podría cambiar la decisión?
+
+El resultado puede ser:
+
+- **ACCIÓN**: actuar ahora.
+- **ACCIÓN CONDICIONADA**: actuar solo si se cumple una condición.
+- **PRUEBA REVERSIBLE**: experimentar antes de adoptar.
+- **RECOPILAR EVIDENCIA**: investigar antes de decidir.
+- **PAUSA**: no existe base suficiente para actuar.
+- **NO SÉ TODAVÍA**: la información disponible no permite seleccionar con integridad.
+
+No declarar una opción como “óptima” solo porque una matriz inventada produzca un decimal bonito.
+
+---
+
+## 6. DOCUMENTAR LA DECISIÓN
+
+Formato recomendado:
 
 ```markdown
 ## DECISIÓN: [Tema]
-Fecha: 2026-08-15
-Basada en: Análisis de [fecha]
+Fecha: [AAAA-MM-DD]
 
-### Contexto
-[Lo que comprendimos]
+### Objetivo
+[...]
 
-### Opciones Evaluadas
-- Opción A: [descripción]
-- Opción B: [descripción]
-- Opción C: [descripción]
+### Contexto relevante
+[...]
 
-### Evaluación contra Principios
-[Matriz de evaluación]
+### Alternativas
+- A: [...]
+- B: [...]
+- C: [...]
 
-### Consecuencias Esperadas
-**Corto Plazo:** [...]
-**Mediano Plazo:** [...]
-**Largo Plazo:** [...]
+### Evaluación
+#### A
+- Evidencia: [...]
+- Supuestos: [...]
+- Riesgos: [...]
+- Reversibilidad: [...]
+- Estado: [...]
 
-### DECISIÓN ELEGIDA
-**Opción A** por: [razones principales]
+#### B
+[...]
 
-### Plan de Ejecución
-1. [Paso 1]
-2. [Paso 2]
-3. [Paso 3]
+### Selección
+Tipo: ACCIÓN | CONDICIONADA | PRUEBA | EVIDENCIA | PAUSA | NO SÉ TODAVÍA
 
-### Métricas de Éxito
-- [Métrica 1]
-- [Métrica 2]
-- [Métrica 3]
+Decisión:
+[Qué se hará]
 
-### Próximos Pasos
-Delegar a holaOS → Ver: `03-ejecutar.md`
-```
+Fundamento:
+[Por qué, basado en evidencia y criterios explícitos]
 
-**Guardar:**
-```
-holaOS.skill("bisturi-jardín-escribir", {
-  tipo: "decisión",
-  contenido: "[registro]",
-  etiquetas: ["arquitectura", "integración"]
-})
+### Condiciones
+[Qué debe comprobarse]
+
+### Revisión
+[Cuándo o mediante qué evidencia se revisará]
 ```
 
 ---
 
-## Cuando Hay Incertidumbre
+## 7. REVISIÓN
 
-Si no puedes decidir entre opciones:
+Una decisión no queda validada porque haya sido ejecutada.
 
-1. **Busca más comprensión** (vuelve al Paso 01-comprender)
-2. **Pide segunda opinión** a otros agentes
-3. **Prueba la opción reversible** primero
-4. **Documenta la incertidumbre** en el Jardín
+Después de actuar:
 
----
+- comparar resultado real frente a esperado;
+- registrar desviaciones;
+- actualizar el estado de las hipótesis;
+- conservar el aprendizaje útil;
+- corregir la decisión cuando la evidencia nueva lo exija.
 
-## Señales de Decisión Sólida
-
-✅ Basada en comprensión documentada  
-✅ Evaluada contra principios  
-✅ Considera consecuencias  
-✅ Tiene métricas de éxito  
-✅ Es documentada en el Jardín  
-
----
-
-## Próximo Paso
-
-Cuando hayas DECIDIDO → Ver: `03-ejecutar.md`
+Una decisión revisable es más robusta que una decisión defendida por orgullo. La humanidad ya produce suficiente burocracia emocional por su cuenta.
