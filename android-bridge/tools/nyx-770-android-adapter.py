@@ -1,21 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 """
 NYX 770 -> Android Bridge adapter.
-
-Consumes protocol 770 packets from the same IN FIFO used by protocol770.py.
-Non-ANDROID packets are delegated unchanged to protocol770.process().
-
-ANDROID contract:
-  770|<id>|<from>|BISTURI|ANDROID|{"method":"ping"}|OK
-  770|<id>|<from>|BISTURI|ANDROID|{"method":"device_info"}|OK
-
-Only the two allowlisted nyx-bridge operations are exposed.
 """
 
 import json
 import os
 import shutil
 import subprocess
+import sys
+
+KERNEL_DIR = os.path.expanduser("~/bisturi-kernel")
+if KERNEL_DIR not in sys.path:
+    sys.path.insert(0, KERNEL_DIR)
 
 import protocol770
 
