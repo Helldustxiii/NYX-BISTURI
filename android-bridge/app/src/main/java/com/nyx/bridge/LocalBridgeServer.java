@@ -76,7 +76,8 @@ public class LocalBridgeServer {
             String[] parts = requestLine.split(" ");
             String path = parts.length >= 2 ? parts[1] : "/";
 
-            while (reader.readLine() != null && !reader.readLine().isEmpty()) {
+            String headerLine;
+            while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
                 // Headers are intentionally ignored for this minimal bridge.
             }
 
