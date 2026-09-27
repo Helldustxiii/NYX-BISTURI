@@ -15,11 +15,11 @@ public class MainActivity extends Activity {
                 "NYX Bridge 0.1\n\n"
                         + "Android ↔ Termux local bridge activo.\n\n"
                         + "Prueba desde Termux:\n"
-                        + "content call --uri content://"
+                        + "/system/bin/content call --uri content://"
                         + BridgeProvider.AUTHORITY
                         + " --method ping\n\n"
                         + "Información del dispositivo:\n"
-                        + "content call --uri content://"
+                        + "/system/bin/content call --uri content://"
                         + BridgeProvider.AUTHORITY
                         + " --method device_info");
         text.setTextSize(18);
