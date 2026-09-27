@@ -674,15 +674,6 @@ Cuando la evidencia contradiga una suposición:
 # 28. Infraestructura canónica
 
 - Repositorio canónico: **Helldustxiii/NYX-BISTURI**.
-- Proyecto Vercel canónico actual: **nyx-bisturi-bho**.
-- `nyx-bisturi` queda como proyecto separado y no debe confundirse con el proyecto Vercel principal.
-- La limpieza o eliminación de proyectos duplicados de Vercel es una tarea de infraestructura independiente del contenido de este repositorio.
-
-Este estado debe comprobarse antes de realizar cambios de infraestructura.
-
-## 28. Infraestructura canónica
-
-- Repositorio canónico: **Helldustxiii/NYX-BISTURI**.
 - Proyecto Vercel canónico actual: **nyx-bisturi-bhow** (verificado el 2026-09-27 mediante el deployment READY enlazado al commit actual de `main`).
 - `nyx-bisturi` permanece como proyecto Vercel separado/legado pendiente de una decisión explícita de limpieza. No debe asumirse que pueda eliminarse todavía.
 
