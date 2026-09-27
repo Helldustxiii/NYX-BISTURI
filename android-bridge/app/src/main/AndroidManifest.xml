@@ -7,6 +7,11 @@
         android:allowBackup="false"
         android:supportsRtl="true">
 
+        <provider
+            android:name=".BridgeProvider"
+            android:authorities="com.nyx.bridge.provider"
+            android:exported="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
