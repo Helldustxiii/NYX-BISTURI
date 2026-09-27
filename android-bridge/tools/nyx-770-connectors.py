@@ -73,15 +73,15 @@ def process(message):
             return
 
         if service == "android":
-            from nyx_770_android_adapter import bridge_call
-            output = bridge_call(action)
+            from connectors.android import call
+            output = call(action)
             send(packet, output)
             return
 
         raise ValueError("local_connector_not_implemented")
 
     except Exception as error:
-        send(packet, "FAIL", str(error))
+        send(packet, "ERROR", str(error), "FAIL")
 
 
 def main():
