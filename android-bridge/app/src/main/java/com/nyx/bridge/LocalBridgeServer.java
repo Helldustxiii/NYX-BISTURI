@@ -1,6 +1,7 @@
 package com.nyx.bridge;
 
 import android.os.Build;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 public class LocalBridgeServer {
 
     public static final int PORT = 8765;
+    private static final String TAG = "NYXBridge";
 
     private volatile boolean running;
+    private volatile String status = "starting";
     private ServerSocket serverSocket;
     private Thread serverThread;
 
@@ -25,31 +28,43 @@ public class LocalBridgeServer {
         }
 
         running = true;
+        status = "starting";
         serverThread = new Thread(() -> {
             try {
                 InetAddress loopback = InetAddress.getByName("127.0.0.1");
                 serverSocket = new ServerSocket(PORT, 20, loopback);
+                status = "listening on 127.0.0.1:" + PORT;
+                Log.i(TAG, status);
 
                 while (running) {
                     try {
                         Socket socket = serverSocket.accept();
                         handle(socket);
-                    } catch (IOException ignored) {
+                    } catch (IOException e) {
                         if (!running) {
                             break;
                         }
+                        status = "accept error: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+                        Log.e(TAG, status, e);
                     }
                 }
-            } catch (IOException ignored) {
+            } catch (IOException e) {
                 running = false;
+                status = "startup error: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+                Log.e(TAG, status, e);
             }
         }, "nyx-bridge-http");
 
         serverThread.start();
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public synchronized void stop() {
         running = false;
+        status = "stopped";
 
         if (serverSocket != null) {
             try {
@@ -119,7 +134,8 @@ public class LocalBridgeServer {
             output.write(response.getBytes(StandardCharsets.UTF_8));
             output.write(bytes);
             output.flush();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            Log.e(TAG, "request error: " + e.getMessage(), e);
         }
     }
 
