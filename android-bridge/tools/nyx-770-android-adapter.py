@@ -14,7 +14,9 @@ Only the two allowlisted nyx-bridge operations are exposed.
 
 import json
 import os
+import shutil
 import subprocess
+
 import protocol770
 
 IN_CHANNEL = os.path.expanduser("~/NYX/channel/link")
@@ -26,13 +28,25 @@ ALLOWED_METHODS = {
 }
 
 
+def bridge_executable():
+    command = shutil.which("nyx-bridge")
+    if command:
+        return command
+
+    fallback = os.path.expanduser("~/bin/nyx-bridge")
+    if os.path.isfile(fallback) and os.access(fallback, os.X_OK):
+        return fallback
+
+    raise FileNotFoundError("nyx-bridge_not_found")
+
+
 def bridge_call(method):
     command = ALLOWED_METHODS.get(method)
     if command is None:
         raise ValueError("method_not_allowed")
 
     result = subprocess.run(
-        ["nyx-bridge", command],
+        [bridge_executable(), command],
         capture_output=True,
         text=True,
         timeout=10,
