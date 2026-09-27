@@ -15,7 +15,7 @@ Transport:
 Abrir NYX Bridge en Android y ejecutar:
 
 ```sh
-content call --uri content://com.nyx.bridge.provider --method ping
+/system/bin/content call --uri content://com.nyx.bridge.provider --method ping
 ```
 
 Debe devolver un `Bundle` con:
@@ -30,7 +30,7 @@ transport=content_provider
 Información básica del dispositivo:
 
 ```sh
-content call --uri content://com.nyx.bridge.provider --method device_info
+/system/bin/content call --uri content://com.nyx.bridge.provider --method device_info
 ```
 
 ## Alcance de esta versión
