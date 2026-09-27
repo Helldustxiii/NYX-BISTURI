@@ -7,6 +7,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
 
     private LocalBridgeServer bridgeServer;
+    private TextView text;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -15,13 +16,14 @@ public class MainActivity extends Activity {
         bridgeServer = new LocalBridgeServer();
         bridgeServer.start();
 
-        TextView text = new TextView(this);
+        text = new TextView(this);
         text.setText(
                 "NYX Bridge 0.2\n\n"
-                        + "Android ↔ Termux local HTTP bridge activo.\n\n"
+                        + "Android ↔ Termux local HTTP bridge.\n"
+                        + "Estado: " + bridgeServer.getStatus() + "\n\n"
                         + "Pruebas desde Termux:\n"
-                        + "curl http://127.0.0.1:" + LocalBridgeServer.PORT + "/ping\n"
-                        + "curl http://127.0.0.1:" + LocalBridgeServer.PORT + "/device_info");
+                        + "curl -i http://127.0.0.1:" + LocalBridgeServer.PORT + "/ping\n"
+                        + "curl -i http://127.0.0.1:" + LocalBridgeServer.PORT + "/device_info");
         text.setTextSize(18);
         text.setPadding(32, 32, 32, 32);
 
