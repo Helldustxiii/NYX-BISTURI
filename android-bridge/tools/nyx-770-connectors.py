@@ -77,7 +77,7 @@ def process(message):
         if service == "android":
             from connectors.android import call
             output = call(action)
-            send(packet, output)
+            send(packet, "RESULT", output)
             return
 
         raise ValueError("local_connector_not_implemented")
