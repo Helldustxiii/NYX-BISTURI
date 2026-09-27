@@ -13,8 +13,10 @@ import os
 import sys
 
 KERNEL_DIR = os.path.expanduser("~/bisturi-kernel")
-if KERNEL_DIR not in sys.path:
-    sys.path.insert(0, KERNEL_DIR)
+TOOLS_DIR = os.path.expanduser("~/nyx-android-bridge-integrate/android-bridge/tools")
+for path in (KERNEL_DIR, TOOLS_DIR):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 import protocol770
 from connectors.registry import get_connector, list_connectors
