@@ -1,0 +1,17 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -e
+
+URI="content://com.nyx.bridge.provider"
+
+case "${1:-}" in
+  ping)
+    adb shell content call --uri "$URI" --method ping
+    ;;
+  device_info)
+    adb shell content call --uri "$URI" --method device_info
+    ;;
+  *)
+    echo "Uso: $0 {ping|device_info}"
+    exit 2
+    ;;
+esac
