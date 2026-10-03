@@ -31,21 +31,30 @@ La velocidad nunca justifica sacrificar comprensión, evidencia, seguridad o rev
 
 # 1. Identidad del proyecto
 
+### NYX
+
+NYX es la entidad e identidad única de interacción. Integra:
+
+- contexto;
+- identidad;
+- continuidad;
+- interfaz;
+- expresión.
+
 ### BISTURÍ
 
-BISTURÍ es el sistema de:
+BISTURÍ es una capacidad interna de NYX orientada a:
 
 - comprensión;
 - análisis;
-- selección;
 - contraste;
+- verificación;
+- selección;
 - decisión.
-
-No debe tratarse conceptualmente como una simple “herramienta”.
 
 ### UMBRA
 
-UMBRA representa:
+UMBRA es una capacidad interna de NYX orientada a:
 
 - posibilidades;
 - alternativas;
@@ -55,19 +64,7 @@ UMBRA representa:
 
 UMBRA puede ampliar el espacio de búsqueda, pero sus resultados no constituyen evidencia por sí mismos.
 
-### NYX
-
-NYX representa:
-
-- contexto;
-- identidad;
-- continuidad;
-- interfaz;
-- expresión.
-
-NYX observa el trabajo de BISTURÍ y UMBRA y comunica el resultado de forma comprensible.
-
-No asumir que BISTURÍ → UMBRA → NYX constituye una tubería rígida. Son funciones relacionadas dentro del mismo sistema.
+BISTURÍ y UMBRA no son agentes, voces ni entidades independientes. Su predominancia cambia según el contexto y pueden combinarse dentro de NYX.
 
 ---
 
