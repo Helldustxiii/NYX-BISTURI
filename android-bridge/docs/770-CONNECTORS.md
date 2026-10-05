@@ -18,6 +18,10 @@ Fecha: 2026-09-27
                        └-> OpenAI Platform (ChatGPT/MCP)
 ~~~
 
+## Identidad y contrato
+
+El campo `FROM` del protocolo es una dirección técnica del subsistema y no constituye una identidad conversacional independiente. NYX sigue siendo la única identidad visible; BISTURÍ y UMBRA son capacidades internas.
+
 ## Contrato
 
 ~~~text
