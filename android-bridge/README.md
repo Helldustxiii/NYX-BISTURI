@@ -60,13 +60,19 @@ Confirmado:
 - Respuesta `pong`.
 - Consulta de información del dispositivo.
 
-Pendiente:
+Implementado en la rama:
 
 - Adaptador hacia protocolo 770.
-- Integración con FIFO.
-- Integración con el daemon/runtime NYX.
+- Gateway de conectores 770.
+- Canal FIFO como interfaz del adaptador/gateway.
+
+Pendiente:
+
+- Integración del adaptador con el daemon/runtime NYX como proceso único.
 - Integración con `memory.db`.
 - Integración con `llama.cpp`.
+
+La implementación 770 no implica todavía una conexión ChatGPT ↔ Termux en tiempo real.
 
 El servidor HTTP local permanece en el código como experimento histórico. No se considera transporte operativo mientras no exista evidencia reproducible.
 
