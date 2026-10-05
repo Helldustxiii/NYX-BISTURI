@@ -19,6 +19,10 @@ Termux
 
 ### Evidencia
 
+La arquitectura sigue unificada bajo NYX como identidad única. El nombre `BISTURI` que aparece en ejemplos de paquetes es un identificador técnico del endpoint interno, no una segunda entidad conversacional.
+
+### Evidencia
+
 - `protocol770.py` permanece activo en Termux.
 - El protocolo 770 ha respondido correctamente a un `PING` real mediante `~/NYX/channel/link` y `~/NYX/channel/out`.
 - `nyx-bridge ping` devuelve `pong`.
