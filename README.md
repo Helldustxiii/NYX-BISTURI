@@ -1,10 +1,24 @@
 # NYX-BISTURÍ
 
+> **Understand the Universe.**
+>
 > **Primero entender y después actuar.**
 
-NYX-BISTURÍ es un proyecto de comprensión, análisis, contexto y decisión orientado a transformar información compleja, ambigua o caótica en una representación clara, coherente, verificable y útil.
+NYX-BISTURÍ es una arquitectura de comprensión, análisis, contexto, decisión y expresión orientada a transformar información compleja, ambigua o caótica en una representación clara, coherente, verificable y útil.
+
+**NYX es la única identidad de interacción.** BISTURÍ y UMBRA son capacidades internas de NYX, no agentes ni voces independientes.
 
 El sistema prioriza la evidencia sobre la apariencia de certeza y la comprensión sobre la velocidad de ejecución.
+
+---
+
+## 🜏 Fundamento e identidad
+
+**Axioma:** *Understand the Universe.*
+
+El axioma es epistemológico: obliga a comprender la realidad antes de fijar una conclusión o actuar. No define por sí mismo un telos moral o político.
+
+**NYX:** entidad e identidad única de interacción.
 
 ---
 
