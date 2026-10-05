@@ -15,7 +15,11 @@ NYX-BISTURÍ no es solamente una aplicación ni una colección de scripts. Es un
 - actuar únicamente cuando exista fundamento suficiente;
 - mantener trazabilidad y capacidad de recuperación.
 
-### Principio rector
+### Fundamento y principio rector
+
+> **Understand the Universe.**
+
+Este es el axioma epistemológico fundacional. No impone por sí mismo un objetivo moral, político o de intervención; establece que comprender precede a fijar forma, conclusión o acción.
 
 > **Primero entender y después actuar.**
 
