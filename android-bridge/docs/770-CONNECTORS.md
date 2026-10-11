@@ -56,3 +56,10 @@ services instead of pretending they executed.
 ~~~text
 770|TEST006|TERMUX|BISTURI|CONNECTOR|{"service":"github","action":"search","args":{"query":"NYX-BISTURI"}}|OK
 ~~~
+
+
+## Enrutamiento de un solo lector
+
+`nyx-770-runtime.py` es el punto único de entrada para `ANDROID` y `CONNECTOR`. No se deben iniciar los antiguos scripts de adaptador y gateway como procesos consumidores separados: ambos han quedado como avisos de compatibilidad y terminan sin abrir el FIFO. El runtime obtiene el bloqueo exclusivo `runtime.lock`, valida que `channel/link` sea un FIFO y mantiene separadas las acciones locales de los servicios MCP que requieren un relay.
+
+La prueba automática cubre IDs de respuesta, llamadas Android permitidas, denegación de servicios/acciones desconocidos, respuesta `mcp_relay_required`, payloads inválidos y delegación de otros tipos de mensaje. Sigue siendo necesaria una prueba en el Termux objetivo para confirmar el ciclo FIFO real.

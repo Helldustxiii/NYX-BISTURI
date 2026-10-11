@@ -79,3 +79,22 @@ El servidor HTTP local permanece en el código como experimento histórico. No s
 ## Principio de integración
 
 No conectar una capa con otra únicamente porque ambas existan. Cada enlace debe tener una interfaz observable, una prueba reproducible y una vía de rollback.
+
+
+## Runtime del protocolo 770
+
+El único consumidor autorizado de `~/NYX/channel/link` es ahora:
+
+```sh
+python "$HOME/nyx-android-bridge-integrate/android-bridge/tools/nyx-770-runtime.py"
+```
+
+El runtime enruta los tipos `ANDROID` y `CONNECTOR` en un único proceso, mantiene el bloqueo exclusivo `~/NYX/channel/runtime.lock`, y vuelve a abrir el FIFO cuando un emisor cierra su extremo. Los scripts antiguos `nyx-770-android-adapter.py` y `nyx-770-connectors.py` ya no consumen ese FIFO de manera independiente: muestran un aviso y salen.
+
+Pruebas unitarias del enrutamiento:
+
+```sh
+python -m unittest discover -s android-bridge/tests -v
+```
+
+**Estado de verificación:** la prueba de la CI verifica el enrutamiento con dependencias simuladas. La ejecución del nuevo runtime contra el FIFO y el dispositivo real debe confirmarse en Termux antes de declararlo operativo. No se inicia automáticamente ni modifica el Jardín.

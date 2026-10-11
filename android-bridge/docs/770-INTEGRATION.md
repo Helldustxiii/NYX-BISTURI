@@ -70,3 +70,18 @@ No se expone ejecución arbitraria de shell desde Android. Solo se permiten los 
 
 No se modifica Jardín.
 
+
+
+## Runtime unificado: corrección de propiedad del FIFO
+
+Se añade `tools/nyx-770-runtime.py` como único consumidor del canal `~/NYX/channel/link`. El mismo proceso enruta los paquetes `ANDROID` y `CONNECTOR`, conserva la delegación de otros tipos a `protocol770.process()` y utiliza un bloqueo exclusivo en `~/NYX/channel/runtime.lock` para impedir que se inicien dos copias de este runtime. Los dos scripts anteriores dejan de ser consumidores independientes.
+
+La evidencia histórica de TEST004 demuestra una prueba anterior del adaptador, pero **no valida por sí sola este runtime nuevo ni acredita una integración persistente**. La nueva implementación debe probarse en Termux con el canal real antes de marcar la integración completa como CONFIRMADA.
+
+Validación automática del contrato y enrutamiento:
+
+```sh
+python -m unittest discover -s android-bridge/tests -v
+```
+
+La suite simula el protocolo y el driver Android; no sustituye la prueba de extremo a extremo en el dispositivo. El runtime no se inicia automáticamente.
