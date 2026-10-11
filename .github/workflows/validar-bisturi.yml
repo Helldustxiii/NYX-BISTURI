@@ -70,6 +70,14 @@ jobs:
           grep -q 'Primero entender y después actuar' BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
           grep -q 'La anticipación nunca debe sustituir a la evidencia' BISTURI/sistema-prompts/BISTURI-CHATGPT-SYSTEM-PROMPT.md
 
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Pruebas del runtime 770
+        run: python -m unittest discover -s android-bridge/tests -v
+
       - name: Instalar dependencias
         run: npm ci
 

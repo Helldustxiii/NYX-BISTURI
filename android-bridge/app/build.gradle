@@ -1,0 +1,16 @@
+plugins {
+    id 'com.android.application' version '9.4.0'
+}
+
+android {
+    namespace 'com.nyx.bridge'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.nyx.bridge'
+        minSdk 28
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+}
