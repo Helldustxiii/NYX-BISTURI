@@ -1,5 +1,7 @@
 import importlib.util
 import json
+import os
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
@@ -112,6 +114,28 @@ class RuntimeRoutingTests(unittest.TestCase):
         self.send("not-a-770-message\n")
         self.assertEqual(self.protocol.sent, [])
         self.assertEqual(self.protocol.delegated, [])
+
+
+    def test_runtime_lock_rejects_a_second_reader(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            lock_path = Path(tempdir) / "runtime.lock"
+            first_lock = runtime.acquire_runtime_lock(lock_path)
+            try:
+                with self.assertRaisesRegex(RuntimeError, "runtime_already_running"):
+                    runtime.acquire_runtime_lock(lock_path)
+            finally:
+                first_lock.close()
+
+    def test_input_channel_must_be_a_fifo(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            ordinary_file = Path(tempdir) / "not-a-fifo"
+            ordinary_file.write_text("x", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "input_channel_not_fifo"):
+                runtime._require_fifo(ordinary_file)
+
+            fifo = Path(tempdir) / "real-fifo"
+            os.mkfifo(fifo)
+            runtime._require_fifo(fifo)
 
 
 if __name__ == "__main__":
