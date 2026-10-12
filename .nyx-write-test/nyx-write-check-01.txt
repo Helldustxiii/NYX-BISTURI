@@ -1,0 +1,4 @@
+NYX-BISTURI WRITE-PATH DIAGNOSTIC
+Purpose: isolated test artifact for alternate-route investigation.
+Scope: GitHub branch only; no Garden content and no production code.
+Dropbox status: write/read-back remains unverified.
