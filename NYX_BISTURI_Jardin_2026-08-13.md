@@ -55,3 +55,6 @@ Recordar no significa recitar memoria. Significa conservar aquello que modifica 
 
 ### Frase faro
 Primero comprender. Después decidir.
+
+
+<!-- NYX-GITHUB-DROPBOX-LINK-TEST-2026-10-13: diagnóstico temporal; no es contenido operativo -->
