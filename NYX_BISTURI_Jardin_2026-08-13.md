@@ -62,7 +62,7 @@ Primero comprender. Después decidir.
 
 ### Conexiones externas
 - **Dropbox:** se confirmó la lectura del Jardín original. También se verificó una prueba de copia y lectura de una copia temporal; esa copia se eliminó después y la carpeta de prueba quedó vacía. La copia temporal fue enviada a los archivos eliminados de Dropbox, no purgada definitivamente.
-- **Límite técnico actual:** el conector de Dropbox permite leer, copiar, mover, eliminar, restaurar revisiones y subir archivos proporcionados a la conversación, pero no ofrece una operación de edición directa del texto de un archivo existente. Por eso, esta revisión se prepara mediante conectores secundarios. El original de Dropbox aún no se ha sustituido ni modificado.
+- **Límite técnico actual:** el conector de Dropbox permite leer, copiar, mover, eliminar, restaurar revisiones y subir archivos proporcionados a la conversación, pero no ofrece una operación de edición directa del texto de un archivo existente. Por eso, el reemplazo se hizo mediante una ruta secundaria: se generó el Markdown completo, se exportó como archivo, se subió temporalmente a Dropbox, se verificó su huella de contenido y se movió a la ruta canónica. El nuevo archivo quedó releído y verificado; el anterior se retiró después.
 - **GitHub:** el mapa de accesos de auditoría está en la rama `ops/access-audit-2026-10-13`. Esta revisión del Jardín se limita a esa rama; `main` no se modifica en esta operación.
 - **Vercel:** se comprobó una vista previa asociada a la rama de auditoría. No se promocionó a producción ni se cambiaron configuraciones de producción.
 - **Notion:** el mapa de accesos y la nota de sincronización reflejan los resultados de la auditoría y la eliminación de la copia temporal.
@@ -73,4 +73,4 @@ Primero comprender. Después decidir.
 Termux y el puente Android permanecen deliberadamente desconectados y fuera del alcance de esta fase. No intentar acceder, diagnosticar ni reactivar el puente sin una nueva decisión expresa de H3lldust.
 
 ### Criterio de cambio
-Esta actualización registra únicamente hechos operativos verificados. No modifica los principios raíz, la arquitectura conceptual ni los símbolos del Jardín. La sustitución del original de Dropbox queda pendiente hasta disponer de una vía real de transferencia de contenido y comprobar el resultado.
+Esta actualización registra únicamente hechos operativos verificados. No modifica los principios raíz, la arquitectura conceptual ni los símbolos del Jardín. La sustitución del original de Dropbox se completó y verificó el 2026-10-13. Ruta canónica: `/Nyx Ia/NYX_BISTURI_Jardin_2026-08-13.md`; tamaño: 6087 bytes; revisión Dropbox: `0165dadc33f6e8d00000002c88dd913`. La versión anterior se envió a «Archivos eliminados» de Dropbox, por lo que sigue siendo recuperable desde la interfaz, y la carpeta temporal se retiró.
