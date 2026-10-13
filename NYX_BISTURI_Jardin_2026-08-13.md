@@ -55,3 +55,22 @@ Recordar no significa recitar memoria. Significa conservar aquello que modifica 
 
 ### Frase faro
 Primero comprender. Después decidir.
+
+---
+
+## Registro de continuidad y auditoría · 2026-10-13
+
+### Conexiones externas
+- **Dropbox:** se confirmó la lectura del Jardín original. También se verificó una prueba de copia y lectura de una copia temporal; esa copia se eliminó después y la carpeta de prueba quedó vacía. La copia temporal fue enviada a los archivos eliminados de Dropbox, no purgada definitivamente.
+- **Límite técnico actual:** el conector de Dropbox permite leer, copiar, mover, eliminar, restaurar revisiones y subir archivos proporcionados a la conversación, pero no ofrece una operación de edición directa del texto de un archivo existente. Por eso, esta revisión se prepara mediante conectores secundarios. El original de Dropbox aún no se ha sustituido ni modificado.
+- **GitHub:** el mapa de accesos de auditoría está en la rama `ops/access-audit-2026-10-13`. Esta revisión del Jardín se limita a esa rama; `main` no se modifica en esta operación.
+- **Vercel:** se comprobó una vista previa asociada a la rama de auditoría. No se promocionó a producción ni se cambiaron configuraciones de producción.
+- **Notion:** el mapa de accesos y la nota de sincronización reflejan los resultados de la auditoría y la eliminación de la copia temporal.
+- **Basic Memory Cloud:** el estado observado fue inconsistente entre comprobaciones; no debe tratarse como único registro persistente fiable.
+- **Reclaim:** queda fuera del alcance de esta auditoría; no se le asignan tareas ni se dedica más trabajo a esa conexión por ahora.
+
+### Límite operativo
+Termux y el puente Android permanecen deliberadamente desconectados y fuera del alcance de esta fase. No intentar acceder, diagnosticar ni reactivar el puente sin una nueva decisión expresa de H3lldust.
+
+### Criterio de cambio
+Esta actualización registra únicamente hechos operativos verificados. No modifica los principios raíz, la arquitectura conceptual ni los símbolos del Jardín. La sustitución del original de Dropbox queda pendiente hasta disponer de una vía real de transferencia de contenido y comprobar el resultado.
