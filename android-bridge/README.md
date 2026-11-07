@@ -88,6 +88,17 @@ Comandos:
 - `nyx-bridge device_info` — información básica del dispositivo.
 - `nyx-bridge inbox` — lista imágenes locales recibidas.
 
+### Compilar y ejecutar pruebas Android
+
+Desde el directorio del proyecto Android:
+
+```sh
+cd android-bridge
+./gradlew :app:testDebugUnitTest :app:assembleDebug
+```
+
+El APK de depuración se genera en `app/build/outputs/apk/debug/app-debug.apk`.
+
 ## Estado de integraciones
 
 Confirmado anteriormente:
