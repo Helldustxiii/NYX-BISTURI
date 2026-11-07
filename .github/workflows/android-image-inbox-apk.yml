@@ -49,7 +49,35 @@ jobs:
         working-directory: android-bridge
         run: ./gradlew --no-daemon :app:testDebugUnitTest
 
-      - name: Build debug APK
+      - name: Restore original NYX debug signing key
+        if: github.event_name != 'pull_request'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/nyx-debug.keystore"
+          chmod 600 "$RUNNER_TEMP/nyx-debug.keystore"
+          keytool -list -keystore "$RUNNER_TEMP/nyx-debug.keystore" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" > /dev/null
+
+      - name: Build debug APK with original signing key
+        if: github.event_name != 'pull_request'
+        working-directory: android-bridge
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/nyx-debug.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Build pull request APK with temporary CI debug key
+        if: github.event_name == 'pull_request'
         working-directory: android-bridge
         run: ./gradlew --no-daemon :app:assembleDebug
 
