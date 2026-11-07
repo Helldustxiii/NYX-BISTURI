@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application' version '9.4.0'
 }
 
+def nyxKeystorePath = System.getenv('ANDROID_KEYSTORE_FILE')
+def nyxOriginalSigningAvailable = nyxKeystorePath != null && !nyxKeystorePath.isBlank()
+
 android {
     namespace 'com.nyx.bridge'
     compileSdk 34
@@ -12,6 +15,23 @@ android {
         targetSdk 35
         versionCode 2
         versionName '1.1'
+    }
+
+    if (nyxOriginalSigningAvailable) {
+        signingConfigs {
+            nyxOriginalDebug {
+                storeFile file(nyxKeystorePath)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+
+        buildTypes {
+            debug {
+                signingConfig signingConfigs.nyxOriginalDebug
+            }
+        }
     }
 }
 
