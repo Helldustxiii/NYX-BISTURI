@@ -7,6 +7,12 @@ on:
     paths:
       - "android-bridge/**"
       - ".github/workflows/android-image-inbox-apk.yml"
+  pull_request:
+    branches:
+      - integrate/android-bridge-2026-09-27
+    paths:
+      - "android-bridge/**"
+      - ".github/workflows/android-image-inbox-apk.yml"
   workflow_dispatch:
 
 permissions:
