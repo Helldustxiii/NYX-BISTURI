@@ -2,6 +2,7 @@ package com.nyx.bridge;
 
 import android.app.Activity;
 import android.content.ClipData;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,12 +14,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** Receives Android share intents and imports images into the local NYX inbox. */
 public final class ImageReceiverActivity extends Activity {
 
     private static final int MAX_IMAGES_PER_SHARE = 5;
+    private static final String STATE_IMPORT_STARTED = "nyx.import_started";
+    private static final String STATE_STATUS = "nyx.status";
+    private static final ExecutorService IMPORT_EXECUTOR =
+            Executors.newSingleThreadExecutor();
+
     private TextView statusView;
+    private boolean importStarted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +42,16 @@ public final class ImageReceiverActivity extends Activity {
         scrollView.addView(statusView);
         setContentView(scrollView);
 
-        handleIncomingIntent(getIntent());
+        if (savedInstanceState != null
+                && savedInstanceState.getBoolean(STATE_IMPORT_STARTED, false)) {
+            importStarted = true;
+            showStatus(savedInstanceState.getString(
+                    STATE_STATUS,
+                    "La recepción ya se había iniciado. Consulta nyx-bridge inbox en Termux."
+            ));
+        } else {
+            handleIncomingIntent(getIntent());
+        }
     }
 
     @Override
@@ -41,6 +59,15 @@ public final class ImageReceiverActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIncomingIntent(intent);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(STATE_IMPORT_STARTED, importStarted);
+        if (statusView != null) {
+            outState.putString(STATE_STATUS, statusView.getText().toString());
+        }
+        super.onSaveInstanceState(outState);
     }
 
     private void handleIncomingIntent(Intent intent) {
@@ -67,30 +94,42 @@ public final class ImageReceiverActivity extends Activity {
             return;
         }
 
-        StringBuilder report = new StringBuilder("NYX Bridge\n\n");
-        int imported = 0;
+        importStarted = true;
+        showStatus("NYX Bridge\n\nValidando y guardando "
+                + sources.size() + " imagen(es)…");
 
-        for (Uri source : sources) {
-            try {
-                ImageInboxImporter.ImportResult result =
-                        ImageInboxImporter.importImage(this, source);
-                imported++;
-                report.append("✓ ").append(result.fileName).append('\n')
-                        .append("  ").append(result.width).append(" × ")
-                        .append(result.height).append(" · ")
-                        .append(formatBytes(result.byteCount)).append('\n');
-            } catch (Exception error) {
-                report.append("✗ Imagen rechazada: ")
-                        .append(safeError(error)).append('\n');
+        Context applicationContext = getApplicationContext();
+        IMPORT_EXECUTOR.execute(() -> {
+            StringBuilder report = new StringBuilder("NYX Bridge\n\n");
+            int imported = 0;
+
+            for (Uri source : sources) {
+                try {
+                    ImageInboxImporter.ImportResult result =
+                            ImageInboxImporter.importImage(applicationContext, source);
+                    imported++;
+                    report.append("✓ ").append(result.fileName).append('\n')
+                            .append("  ").append(result.width).append(" × ")
+                            .append(result.height).append(" · ")
+                            .append(formatBytes(result.byteCount)).append('\n');
+                } catch (Exception error) {
+                    report.append("✗ Imagen rechazada: ")
+                            .append(safeError(error)).append('\n');
+                }
             }
-        }
 
-        report.append("\nGuardadas: ").append(imported)
-                .append(" de ").append(sources.size())
-                .append("\n\nDestino: Download/NYX-Inbox/")
-                .append("\n\nTermux: nyx-bridge inbox");
+            report.append("\nGuardadas: ").append(imported)
+                    .append(" de ").append(sources.size())
+                    .append("\n\nDestino: Download/NYX-Inbox/")
+                    .append("\n\nTermux: nyx-bridge inbox");
 
-        showStatus(report.toString());
+            final String finalReport = report.toString();
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    showStatus(finalReport);
+                }
+            });
+        });
     }
 
     private List<Uri> collectUris(Intent intent) {
