@@ -30,6 +30,50 @@ adb shell content call \
 
 El acceso directo mediante `/system/bin/content` ejecutado como el UID normal de Termux fue rechazado por permisos. La misma llamada ejecutada dentro de `adb shell` funciona.
 
+## Receptor de imágenes
+
+NYX Bridge se registra como destino de **Compartir** para imágenes Android.
+
+Flujo:
+
+1. En Dropbox, abre las opciones del JPG y utiliza **Exportar**.
+2. En la hoja de compartir de Android, selecciona **NYX Bridge**.
+3. El receptor valida el archivo y lo copia a `Download/NYX-Inbox/`.
+4. Desde Termux, consulta el contenido con `nyx-bridge inbox`.
+
+Formatos admitidos: JPEG/JPG, PNG y WebP. Límite: 20 MiB por imagen y 5 imágenes por envío. Se comprueban la firma binaria, las dimensiones y el tamaño; la extensión o el MIME declarado por la aplicación emisora no se consideran prueba suficiente.
+
+La importación usa el almacenamiento compartido de Android (MediaStore Downloads), no el directorio privado de la app. No crea enlaces, no sube imágenes a Internet y no envía el contenido a ChatGPT. Las imágenes guardadas quedan accesibles a Termux cuando este tiene concedido el permiso de almacenamiento compartido.
+
+### Preparación de Termux
+
+Concede el permiso de almacenamiento una vez:
+
+```sh
+termux-setup-storage
+```
+
+Instala el wrapper actualizado desde una copia del repositorio:
+
+```sh
+chmod +x android-bridge/tools/nyx-bridge
+cp android-bridge/tools/nyx-bridge "$PREFIX/bin/nyx-bridge"
+```
+
+Consulta las imágenes recibidas:
+
+```sh
+nyx-bridge inbox
+```
+
+Ruta compartida esperada:
+
+```text
+~/storage/shared/Download/NYX-Inbox/
+```
+
+**Límite conocido:** este receptor hace que las imágenes estén disponibles localmente para Termux/NYX-BISTURÍ. No constituye un transporte de imágenes desde Dropbox hacia el modelo ChatGPT de esta conversación.
+
 ## Wrapper versionado
 
 El repositorio incluye:
@@ -38,21 +82,26 @@ El repositorio incluye:
 android-bridge/tools/nyx-bridge
 ```
 
-Después de copiarlo o enlazarlo en Termux:
+Comandos:
+
+- `nyx-bridge ping` — prueba del canal.
+- `nyx-bridge device_info` — información básica del dispositivo.
+- `nyx-bridge inbox` — lista imágenes locales recibidas.
+
+### Compilar y ejecutar pruebas Android
+
+Desde el directorio del proyecto Android:
 
 ```sh
-nyx-bridge ping
-nyx-bridge device_info
+cd android-bridge
+./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-## Métodos actuales
-
-- `ping` — prueba del canal.
-- `device_info` — información básica del dispositivo.
+El APK de depuración se genera en `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Estado de integraciones
 
-Confirmado:
+Confirmado anteriormente:
 
 - ADB Wi-Fi desde Termux.
 - Acceso de ADB shell al paquete `com.nyx.bridge`.
@@ -60,7 +109,7 @@ Confirmado:
 - Respuesta `pong`.
 - Consulta de información del dispositivo.
 
-Implementado en la rama:
+Implementado en la rama de integración:
 
 - Adaptador hacia protocolo 770.
 - Gateway de conectores 770.
@@ -71,6 +120,7 @@ Pendiente:
 - Integración del adaptador con el daemon/runtime NYX como proceso único.
 - Integración con `memory.db`.
 - Integración con `llama.cpp`.
+- Prueba de recepción en el dispositivo real y lectura efectiva desde Termux.
 
 La implementación 770 no implica todavía una conexión ChatGPT ↔ Termux en tiempo real.
 
@@ -79,7 +129,6 @@ El servidor HTTP local permanece en el código como experimento histórico. No s
 ## Principio de integración
 
 No conectar una capa con otra únicamente porque ambas existan. Cada enlace debe tener una interfaz observable, una prueba reproducible y una vía de rollback.
-
 
 ## Runtime del protocolo 770
 

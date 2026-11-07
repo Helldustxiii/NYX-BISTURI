@@ -10,8 +10,24 @@ case "${1:-}" in
   device_info)
     adb shell content call --uri "$URI" --method device_info
     ;;
+  inbox)
+    INBOX="$HOME/storage/shared/Download/NYX-Inbox"
+    if [ ! -d "$INBOX" ]; then
+      echo "NYX Inbox todavía no existe o Termux no tiene acceso al almacenamiento."
+      echo "Concede el permiso una vez con: termux-setup-storage"
+      exit 1
+    fi
+    shopt -s nullglob
+    images=("$INBOX"/*.jpg "$INBOX"/*.jpeg "$INBOX"/*.png "$INBOX"/*.webp)
+    echo "NYX Inbox: $INBOX"
+    if [ "${#images[@]}" -eq 0 ]; then
+      echo "La carpeta está vacía."
+    else
+      ls -lh -- "${images[@]}"
+    fi
+    ;;
   *)
-    echo "Uso: $0 {ping|device_info}"
+    echo "Uso: $0 {ping|device_info|inbox}"
     exit 2
     ;;
 esac
