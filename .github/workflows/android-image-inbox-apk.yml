@@ -1,0 +1,62 @@
+name: Build NYX Android Bridge APK
+
+on:
+  push:
+    branches:
+      - feature/android-image-inbox-2026-11-07
+    paths:
+      - "android-bridge/**"
+      - ".github/workflows/android-image-inbox-apk.yml"
+  pull_request:
+    branches:
+      - integrate/android-bridge-2026-09-27
+    paths:
+      - "android-bridge/**"
+      - ".github/workflows/android-image-inbox-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nyx-android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and build debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Make Gradle wrapper executable
+        working-directory: android-bridge
+        run: chmod +x ./gradlew
+
+      - name: Run Android unit tests
+        working-directory: android-bridge
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
+
+      - name: Build debug APK
+        working-directory: android-bridge
+        run: ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyx-bridge-image-inbox-debug
+          path: android-bridge/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
