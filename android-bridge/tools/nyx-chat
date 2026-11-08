@@ -1,0 +1,280 @@
+#!/data/data/com.termux/files/usr/bin/python
+"""Safe chat/status entry point for the NYX Android app.
+
+The script accepts one user message, sends a HELLO packet through the existing
+770 FIFO, and waits for the matching RESULT. It never executes arbitrary shell
+commands and never starts a second FIFO reader for protocol 770.
+"""
+from __future__ import annotations
+
+import errno
+import fcntl
+import json
+import os
+import select
+import sys
+import time
+import urllib.error
+import urllib.request
+import uuid
+from pathlib import Path
+from typing import Any
+
+MAX_MESSAGE_BYTES = 18_000
+RESPONSE_TIMEOUT_SECONDS = 240
+RUNTIME_NAME = b"nyx-770-runtime.py"
+
+
+def emit(value: dict[str, Any]) -> None:
+    sys.stdout.write(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n")
+    sys.stdout.flush()
+
+
+def parse_packet(line: str) -> dict[str, str] | None:
+    fields = line.rstrip("\r\n").split("|", 6)
+    if len(fields) != 7 or fields[0] != "770":
+        return None
+    return {
+        "id": fields[1],
+        "from": fields[2],
+        "to": fields[3],
+        "type": fields[4],
+        "data": fields[5],
+        "status": fields[6],
+    }
+
+
+def decode_response(packet: dict[str, str]) -> tuple[bool, str]:
+    try:
+        payload = json.loads(packet["data"])
+    except (TypeError, json.JSONDecodeError):
+        return packet["status"] == "OK" and packet["type"] == "RESULT", packet["data"]
+
+    if isinstance(payload, dict):
+        text = payload.get("text")
+        if text is not None:
+            return packet["status"] == "OK" and packet["type"] == "RESULT", str(text)
+        if payload.get("error"):
+            return False, str(payload["error"])
+    return packet["status"] == "OK" and packet["type"] == "RESULT", json.dumps(
+        payload, ensure_ascii=False
+    )
+
+
+def is_fifo(path: Path) -> bool:
+    try:
+        return path.is_fifo()
+    except OSError:
+        return False
+
+
+def runtime_is_running() -> bool:
+    proc = Path("/proc")
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return False
+
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            command = (entry / "cmdline").read_bytes()
+        except (OSError, PermissionError):
+            continue
+        if RUNTIME_NAME in command:
+            return True
+    return False
+
+
+def qwen_is_healthy() -> tuple[bool, str]:
+    request = urllib.request.Request(
+        "http://127.0.0.1:8080/health",
+        headers={"Accept": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=2.5) as response:
+            body = response.read(4096).decode("utf-8", errors="replace")
+        parsed = json.loads(body)
+        healthy = response.status == 200 and parsed.get("status") == "ok"
+        return healthy, "ok" if healthy else body[:300]
+    except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+        return False, str(error)
+
+
+def external_apps_enabled(home: Path) -> bool:
+    properties = home / ".termux" / "termux.properties"
+    try:
+        for raw_line in properties.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key.strip() == "allow-external-apps":
+                return value.strip().lower() == "true"
+    except OSError:
+        return False
+    return False
+
+
+def status_report() -> dict[str, Any]:
+    home = Path.home()
+    channel = home / "NYX" / "channel"
+    link = channel / "link"
+    output = channel / "out"
+    runtime = runtime_is_running()
+    qwen, qwen_detail = qwen_is_healthy()
+    link_ok = is_fifo(link)
+    out_ok = is_fifo(output)
+    external = external_apps_enabled(home)
+    checks = {
+        "runtime": runtime,
+        "qwen": qwen,
+        "input_fifo": link_ok,
+        "output_fifo": out_ok,
+        "allow_external_apps": external,
+    }
+    return {
+        "ok": True,
+        "kind": "status",
+        "checks": checks,
+        "details": {"qwen": qwen_detail},
+        "ready": runtime and qwen and link_ok and out_ok and external,
+    }
+
+
+def write_unmatched(home: Path, raw_line: str) -> None:
+    packet = parse_packet(raw_line)
+    if packet is None:
+        return
+    directory = home / "NYX" / "channel" / "unmatched"
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / (packet["id"].replace("/", "_") + ".msg")
+    temporary = target.with_suffix(".tmp")
+    temporary.write_text(raw_line.rstrip("\r\n") + "\n", encoding="utf-8")
+    temporary.replace(target)
+
+
+def send_message(message: str) -> dict[str, Any]:
+    if not message.strip():
+        return {"ok": False, "kind": "chat", "error": "El mensaje está vacío."}
+    if len(message.encode("utf-8")) > MAX_MESSAGE_BYTES:
+        return {"ok": False, "kind": "chat", "error": "El mensaje supera el límite de 18 KB."}
+
+    home = Path.home()
+    channel = home / "NYX" / "channel"
+    input_fifo = channel / "link"
+    output_fifo = channel / "out"
+    if not is_fifo(input_fifo) or not is_fifo(output_fifo):
+        return {"ok": False, "kind": "chat", "error": "Los canales FIFO 770 no están disponibles."}
+    if not runtime_is_running():
+        return {"ok": False, "kind": "chat", "error": "El Runtime 770 no está activo."}
+
+    lock_path = channel / "app-client.lock"
+    lock_handle = lock_path.open("a", encoding="utf-8")
+    try:
+        try:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return {"ok": False, "kind": "chat", "error": "Ya hay otro mensaje en tránsito. Espera a que termine."}
+
+        request_id = "NYX-APP-" + uuid.uuid4().hex
+        wire_data = json.dumps({"text": message}, ensure_ascii=False, separators=(",", ":"))
+        wire = f"770|{request_id}|TERMUX|BISTURI|HELLO|{wire_data}|OK\n"
+
+        try:
+            output_fd = os.open(output_fifo, os.O_RDWR | os.O_NONBLOCK)
+        except OSError as error:
+            return {"ok": False, "kind": "chat", "error": f"No se pudo abrir el canal de respuesta: {error}"}
+
+        try:
+            input_fd = None
+            open_deadline = time.monotonic() + 8
+            while input_fd is None and time.monotonic() < open_deadline:
+                try:
+                    input_fd = os.open(input_fifo, os.O_WRONLY | os.O_NONBLOCK)
+                except OSError as error:
+                    if error.errno != errno.ENXIO:
+                        raise
+                    time.sleep(0.15)
+            if input_fd is None:
+                return {"ok": False, "kind": "chat", "error": "El Runtime 770 no está leyendo el canal de entrada."}
+
+            try:
+                payload = wire.encode("utf-8")
+                written = os.write(input_fd, payload)
+                if written != len(payload):
+                    return {"ok": False, "kind": "chat", "error": "El mensaje no se pudo escribir completo en el FIFO."}
+            finally:
+                os.close(input_fd)
+
+            poller = select.poll()
+            poller.register(output_fd, select.POLLIN | select.POLLERR | select.POLLHUP)
+            buffer = b""
+            deadline = time.monotonic() + RESPONSE_TIMEOUT_SECONDS
+
+            while time.monotonic() < deadline:
+                remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
+                events = poller.poll(min(remaining_ms, 1000))
+                if not events:
+                    continue
+                try:
+                    chunk = os.read(output_fd, 65536)
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    time.sleep(0.05)
+                    continue
+                buffer += chunk
+                while b"\n" in buffer:
+                    raw, buffer = buffer.split(b"\n", 1)
+                    line = raw.decode("utf-8", errors="replace")
+                    packet = parse_packet(line)
+                    if packet is None:
+                        continue
+                    if packet["id"] != request_id:
+                        write_unmatched(home, line)
+                        continue
+                    ok, text = decode_response(packet)
+                    return {
+                        "ok": ok,
+                        "kind": "chat",
+                        "id": request_id,
+                        "text": text,
+                        "packet_type": packet["type"],
+                        "status": packet["status"],
+                    }
+
+            return {
+                "ok": False,
+                "kind": "chat",
+                "id": request_id,
+                "error": "Tiempo de espera agotado esperando la respuesta de BISTURÍ.",
+            }
+        finally:
+            os.close(output_fd)
+    except Exception as error:
+        return {"ok": False, "kind": "chat", "error": f"{type(error).__name__}: {error}"}
+    finally:
+        lock_handle.close()
+
+
+def main(argv: list[str]) -> int:
+    if argv == ["--status"]:
+        emit(status_report())
+        return 0
+    if len(argv) != 1:
+        emit({
+            "ok": False,
+            "kind": "chat",
+            "error": "Uso: nyx-chat MENSAJE | nyx-chat --status",
+        })
+        return 2
+
+    result = send_message(argv[0])
+    emit(result)
+    return 0 if result.get("ok") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

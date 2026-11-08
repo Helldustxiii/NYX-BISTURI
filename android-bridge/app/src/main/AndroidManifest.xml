@@ -2,10 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
+
+    <queries>
+        <package android:name="com.termux" />
+    </queries>
 
     <application
         android:theme="@style/AppTheme"
-        android:label="NYX Bridge"
+        android:label="NYX"
         android:allowBackup="false"
         android:supportsRtl="true">
 
@@ -13,6 +18,10 @@
             android:name=".BridgeProvider"
             android:authorities="com.nyx.bridge.provider"
             android:exported="true" />
+
+        <service
+            android:name=".PluginResultsService"
+            android:exported="false" />
 
         <activity
             android:name=".ImageReceiverActivity"
@@ -40,5 +49,4 @@
         </activity>
 
     </application>
-
 </manifest>
