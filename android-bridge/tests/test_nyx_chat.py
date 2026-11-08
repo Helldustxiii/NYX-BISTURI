@@ -10,20 +10,19 @@ SPEC.loader.exec_module(NYX_CHAT)
 
 class ProtocolParsingTests(unittest.TestCase):
 
-    def test_parse_result_packet_preserves_pipe_inside_json(self):
-        line = '770|REQ-1|BISTURI|TERMUX|RESULT|{"text":"a|b"}|OK'
+    def test_parse_result_packet_decodes_escaped_pipe(self):
+        line = r'770|REQ-1|BISTURI|TERMUX|RESULT|{"text":"a\u007cb"}|OK'
         packet = NYX_CHAT.parse_packet(line)
         self.assertIsNotNone(packet)
         self.assertEqual(packet["id"], "REQ-1")
-        self.assertEqual(packet["type"], "RESULT")
-        self.assertEqual(packet["data"], '{"text":"a|b"}')
+        ok, text = NYX_CHAT.decode_response(packet)
+        self.assertTrue(ok)
+        self.assertEqual(text, "a|b")
 
     def test_decode_success_response(self):
         packet = {
-            "id": "REQ-2",
-            "type": "RESULT",
-            "data": '{"text":"Respuesta local"}',
-            "status": "OK",
+            "id": "REQ-2", "type": "RESULT",
+            "data": '{"text":"Respuesta local"}', "status": "OK",
         }
         ok, text = NYX_CHAT.decode_response(packet)
         self.assertTrue(ok)
@@ -31,10 +30,8 @@ class ProtocolParsingTests(unittest.TestCase):
 
     def test_decode_error_packet(self):
         packet = {
-            "id": "REQ-3",
-            "type": "ERROR",
-            "data": '{"text":"runtime_not_ready"}',
-            "status": "FAIL",
+            "id": "REQ-3", "type": "ERROR",
+            "data": '{"text":"runtime_not_ready"}', "status": "FAIL",
         }
         ok, text = NYX_CHAT.decode_response(packet)
         self.assertFalse(ok)

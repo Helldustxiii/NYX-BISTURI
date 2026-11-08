@@ -1,10 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Safe chat/status entry point for the NYX Android app.
-
-The script accepts one user message, sends a HELLO packet through the existing
-770 FIFO, and waits for the matching RESULT. It never executes arbitrary shell
-commands and never starts a second FIFO reader for protocol 770.
-"""
+"""Safe chat/status entry point for the NYX Android app."""
 from __future__ import annotations
 
 import errno
@@ -35,12 +30,8 @@ def parse_packet(line: str) -> dict[str, str] | None:
     if len(fields) != 7 or fields[0] != "770":
         return None
     return {
-        "id": fields[1],
-        "from": fields[2],
-        "to": fields[3],
-        "type": fields[4],
-        "data": fields[5],
-        "status": fields[6],
+        "id": fields[1], "from": fields[2], "to": fields[3],
+        "type": fields[4], "data": fields[5], "status": fields[6],
     }
 
 
@@ -49,7 +40,6 @@ def decode_response(packet: dict[str, str]) -> tuple[bool, str]:
         payload = json.loads(packet["data"])
     except (TypeError, json.JSONDecodeError):
         return packet["status"] == "OK" and packet["type"] == "RESULT", packet["data"]
-
     if isinstance(payload, dict):
         text = payload.get("text")
         if text is not None:
@@ -69,21 +59,19 @@ def is_fifo(path: Path) -> bool:
 
 
 def runtime_is_running() -> bool:
-    proc = Path("/proc")
     try:
-        entries = list(proc.iterdir())
+        entries = Path("/proc").iterdir()
+        for entry in entries:
+            if not entry.name.isdigit():
+                continue
+            try:
+                command = (entry / "cmdline").read_bytes()
+            except (OSError, PermissionError):
+                continue
+            if RUNTIME_NAME in command:
+                return True
     except OSError:
         return False
-
-    for entry in entries:
-        if not entry.name.isdigit():
-            continue
-        try:
-            command = (entry / "cmdline").read_bytes()
-        except (OSError, PermissionError):
-            continue
-        if RUNTIME_NAME in command:
-            return True
     return False
 
 
@@ -95,8 +83,9 @@ def qwen_is_healthy() -> tuple[bool, str]:
     try:
         with urllib.request.urlopen(request, timeout=2.5) as response:
             body = response.read(4096).decode("utf-8", errors="replace")
+            status = response.status
         parsed = json.loads(body)
-        healthy = response.status == 200 and parsed.get("status") == "ok"
+        healthy = status == 200 and parsed.get("status") == "ok"
         return healthy, "ok" if healthy else body[:300]
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
         return False, str(error)
@@ -120,24 +109,18 @@ def external_apps_enabled(home: Path) -> bool:
 def status_report() -> dict[str, Any]:
     home = Path.home()
     channel = home / "NYX" / "channel"
-    link = channel / "link"
-    output = channel / "out"
     runtime = runtime_is_running()
     qwen, qwen_detail = qwen_is_healthy()
-    link_ok = is_fifo(link)
-    out_ok = is_fifo(output)
+    link_ok = is_fifo(channel / "link")
+    out_ok = is_fifo(channel / "out")
     external = external_apps_enabled(home)
     checks = {
-        "runtime": runtime,
-        "qwen": qwen,
-        "input_fifo": link_ok,
-        "output_fifo": out_ok,
+        "runtime": runtime, "qwen": qwen,
+        "input_fifo": link_ok, "output_fifo": out_ok,
         "allow_external_apps": external,
     }
     return {
-        "ok": True,
-        "kind": "status",
-        "checks": checks,
+        "ok": True, "kind": "status", "checks": checks,
         "details": {"qwen": qwen_detail},
         "ready": runtime and qwen and link_ok and out_ok and external,
     }
@@ -163,15 +146,17 @@ def send_message(message: str) -> dict[str, Any]:
 
     home = Path.home()
     channel = home / "NYX" / "channel"
-    input_fifo = channel / "link"
-    output_fifo = channel / "out"
+    input_fifo, output_fifo = channel / "link", channel / "out"
     if not is_fifo(input_fifo) or not is_fifo(output_fifo):
         return {"ok": False, "kind": "chat", "error": "Los canales FIFO 770 no están disponibles."}
     if not runtime_is_running():
         return {"ok": False, "kind": "chat", "error": "El Runtime 770 no está activo."}
 
-    lock_path = channel / "app-client.lock"
-    lock_handle = lock_path.open("a", encoding="utf-8")
+    try:
+        lock_handle = (channel / "app-client.lock").open("a", encoding="utf-8")
+    except OSError as error:
+        return {"ok": False, "kind": "chat", "error": f"No se pudo abrir el bloqueo del cliente: {error}"}
+
     try:
         try:
             fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -180,6 +165,9 @@ def send_message(message: str) -> dict[str, Any]:
 
         request_id = "NYX-APP-" + uuid.uuid4().hex
         wire_data = json.dumps({"text": message}, ensure_ascii=False, separators=(",", ":"))
+        # A literal pipe would be mistaken for a 770 field separator. This
+        # unicode escape is decoded by JSON and preserves the original text.
+        wire_data = wire_data.replace("|", r"\u007c")
         wire = f"770|{request_id}|TERMUX|BISTURI|HELLO|{wire_data}|OK\n"
 
         try:
@@ -201,10 +189,12 @@ def send_message(message: str) -> dict[str, Any]:
                 return {"ok": False, "kind": "chat", "error": "El Runtime 770 no está leyendo el canal de entrada."}
 
             try:
+                flags = fcntl.fcntl(input_fd, fcntl.F_GETFL)
+                fcntl.fcntl(input_fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
                 payload = wire.encode("utf-8")
-                written = os.write(input_fd, payload)
-                if written != len(payload):
-                    return {"ok": False, "kind": "chat", "error": "El mensaje no se pudo escribir completo en el FIFO."}
+                offset = 0
+                while offset < len(payload):
+                    offset += os.write(input_fd, payload[offset:])
             finally:
                 os.close(input_fd)
 
@@ -215,8 +205,7 @@ def send_message(message: str) -> dict[str, Any]:
 
             while time.monotonic() < deadline:
                 remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
-                events = poller.poll(min(remaining_ms, 1000))
-                if not events:
+                if not poller.poll(min(remaining_ms, 1000)):
                     continue
                 try:
                     chunk = os.read(output_fd, 65536)
@@ -237,18 +226,13 @@ def send_message(message: str) -> dict[str, Any]:
                         continue
                     ok, text = decode_response(packet)
                     return {
-                        "ok": ok,
-                        "kind": "chat",
-                        "id": request_id,
-                        "text": text,
-                        "packet_type": packet["type"],
+                        "ok": ok, "kind": "chat", "id": request_id,
+                        "text": text, "packet_type": packet["type"],
                         "status": packet["status"],
                     }
 
             return {
-                "ok": False,
-                "kind": "chat",
-                "id": request_id,
+                "ok": False, "kind": "chat", "id": request_id,
                 "error": "Tiempo de espera agotado esperando la respuesta de BISTURÍ.",
             }
         finally:
@@ -264,13 +248,9 @@ def main(argv: list[str]) -> int:
         emit(status_report())
         return 0
     if len(argv) != 1:
-        emit({
-            "ok": False,
-            "kind": "chat",
-            "error": "Uso: nyx-chat MENSAJE | nyx-chat --status",
-        })
+        emit({"ok": False, "kind": "chat",
+              "error": "Uso: nyx-chat MENSAJE | nyx-chat --status"})
         return 2
-
     result = send_message(argv[0])
     emit(result)
     return 0 if result.get("ok") else 1
