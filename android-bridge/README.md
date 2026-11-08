@@ -49,7 +49,7 @@ chmod +x "$HOME/nyx-android-bridge-integrate/android-bridge/tools/nyx-chat"
 
 1. Termux instalado y con el Runtime 770 y Qwen iniciados.
 2. En Ajustes de Android, conceder a NYX el permiso **Run commands in Termux environment** (com.termux.permission.RUN_COMMAND).
-3. En ~/.termux/termux.properties, establecer:
+3. Termux ejecuta el script mediante el runner oficial app-shell y devuelve el resultado a NYX con PendingIntent.\n4. En ~/.termux/termux.properties, establecer:
 
 ~~~properties
 allow-external-apps=true
@@ -57,8 +57,8 @@ allow-external-apps=true
 
 Si la propiedad ya existe, cambiar su valor en vez de duplicarla. Reiniciar Termux después de cambiar la configuración.
 
-4. Comprobar que nyx-chat existe en la ruta configurada.
-5. Mantener Termux sin restricciones agresivas de batería si el fabricante interrumpe los comandos en segundo plano.
+5. Comprobar que nyx-chat existe en la ruta configurada.
+6. Mantener Termux sin restricciones agresivas de batería si el fabricante interrumpe los comandos en segundo plano.
 
 El permiso Android y allow-external-apps son dos controles de seguridad separados. La documentación oficial de Termux explica ambos y el retorno de resultados mediante PendingIntent.
 

@@ -94,7 +94,7 @@ final class TermuxCommandClient {
         command.putExtra("com.termux.RUN_COMMAND_PATH", getCommandPath(context));
         command.putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arguments);
         command.putExtra("com.termux.RUN_COMMAND_WORKDIR", TERMUX_HOME);
-        command.putExtra("com.termux.RUN_COMMAND_BACKGROUND", true);
+        command.putExtra("com.termux.RUN_COMMAND_RUNNER", "app-shell");
         command.putExtra("com.termux.RUN_COMMAND_COMMAND_LABEL", "NYX · BISTURÍ");
         command.putExtra(
                 "com.termux.RUN_COMMAND_COMMAND_DESCRIPTION",
