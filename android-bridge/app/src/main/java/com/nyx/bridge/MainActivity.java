@@ -86,6 +86,8 @@ public class MainActivity extends Activity {
             }
             receiverRegistered = true;
         }
+        // Termux may finish while NYX is backgrounded; reload persisted results on return.
+        renderCurrentTab();
     }
 
     @Override
