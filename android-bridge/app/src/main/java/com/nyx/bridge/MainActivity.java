@@ -463,8 +463,8 @@ public class MainActivity extends Activity {
         page.addView(savePath, saveParams);
         savePath.setOnClickListener(view -> {
             String value = path.getText().toString().trim();
-            if (!value.startsWith("~/") && !value.startsWith("/data/")) {
-                Toast.makeText(this, "Usa una ruta absoluta o una ruta que empiece por ~/.", Toast.LENGTH_LONG).show();
+            if (!value.startsWith("/data/")) {
+                Toast.makeText(this, "RUN_COMMAND necesita una ruta absoluta de Termux (/data/…).", Toast.LENGTH_LONG).show();
                 return;
             }
             TermuxCommandClient.setCommandPath(this, value);

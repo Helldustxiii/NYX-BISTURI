@@ -14,8 +14,9 @@ final class TermuxCommandClient {
 
     static final String TERMUX_PACKAGE = "com.termux";
     static final String RUN_COMMAND_PERMISSION = "com.termux.permission.RUN_COMMAND";
+    static final String TERMUX_HOME = "/data/data/com.termux/files/home";
     static final String DEFAULT_COMMAND_PATH =
-            "~/nyx-android-bridge-integrate/android-bridge/tools/nyx-chat";
+            TERMUX_HOME + "/nyx-android-bridge-integrate/android-bridge/tools/nyx-chat";
 
     private static final String PREFS = "nyx_app_settings";
     private static final String KEY_COMMAND_PATH = "termux_command_path";
@@ -92,7 +93,7 @@ final class TermuxCommandClient {
         command.setAction("com.termux.RUN_COMMAND");
         command.putExtra("com.termux.RUN_COMMAND_PATH", getCommandPath(context));
         command.putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arguments);
-        command.putExtra("com.termux.RUN_COMMAND_WORKDIR", "~/");
+        command.putExtra("com.termux.RUN_COMMAND_WORKDIR", TERMUX_HOME);
         command.putExtra("com.termux.RUN_COMMAND_BACKGROUND", true);
         command.putExtra("com.termux.RUN_COMMAND_COMMAND_LABEL", "NYX · BISTURÍ");
         command.putExtra(

@@ -34,8 +34,10 @@ La app no ejecuta texto del usuario como código shell. El mensaje se pasa como 
 La app espera encontrar este ejecutable dentro del checkout local de Termux:
 
 ~~~text
-~/nyx-android-bridge-integrate/android-bridge/tools/nyx-chat
+/data/data/com.termux/files/home/nyx-android-bridge-integrate/android-bridge/tools/nyx-chat
 ~~~
+
+RUN_COMMAND_PATH debe ser una ruta absoluta. Si Termux está instalado en una ruta diferente, cambia la ruta desde Ajustes de NYX.
 
 La ruta puede cambiarse desde Ajustes. Debe ser ejecutable:
 
