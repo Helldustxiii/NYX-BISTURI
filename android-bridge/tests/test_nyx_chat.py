@@ -1,17 +1,19 @@
+import importlib.machinery
 import importlib.util
 import pathlib
 import unittest
 
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "tools" / "nyx-chat"
-SPEC = importlib.util.spec_from_file_location("nyx_chat", SCRIPT)
+LOADER = importlib.machinery.SourceFileLoader("nyx_chat", str(SCRIPT))
+SPEC = importlib.util.spec_from_loader(LOADER.name, LOADER)
 NYX_CHAT = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(NYX_CHAT)
+LOADER.exec_module(NYX_CHAT)
 
 
 class ProtocolParsingTests(unittest.TestCase):
 
-    def test_parse_result_packet_decodes_escaped_pipe(self):
-        line = r'770|REQ-1|BISTURI|TERMUX|RESULT|{"text":"a\u007cb"}|OK'
+    def test_parse_result_packet_preserves_literal_pipe(self):
+        line = '770|REQ-1|BISTURI|TERMUX|RESULT|{"text":"a|b"}|OK'
         packet = NYX_CHAT.parse_packet(line)
         self.assertIsNotNone(packet)
         self.assertEqual(packet["id"], "REQ-1")

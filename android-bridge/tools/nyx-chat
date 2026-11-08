@@ -26,12 +26,18 @@ def emit(value: dict[str, Any]) -> None:
 
 
 def parse_packet(line: str) -> dict[str, str] | None:
-    fields = line.rstrip("\r\n").split("|", 6)
-    if len(fields) != 7 or fields[0] != "770":
+    # Split the fixed header from the right-terminated data/status pair.
+    # This preserves literal pipes in model output inside the JSON payload.
+    fields = line.rstrip("\r\n").split("|", 5)
+    if len(fields) != 6 or fields[0] != "770":
+        return None
+    try:
+        data, status = fields[5].rsplit("|", 1)
+    except ValueError:
         return None
     return {
         "id": fields[1], "from": fields[2], "to": fields[3],
-        "type": fields[4], "data": fields[5], "status": fields[6],
+        "type": fields[4], "data": data, "status": status,
     }
 
 
