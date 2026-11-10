@@ -126,7 +126,7 @@ def authorize() -> str:
         "token_access_type": "offline",
         "code_challenge": challenge,
         "code_challenge_method": "S256",
-        "scope": "files.metadata.read files.content.read account_info.read",
+        "scope": "files.metadata.read files.content.read",
     }
     url = AUTHORIZE_URL + "?" + urllib.parse.urlencode(params)
     print("Abre esta dirección y autoriza NYX con permisos de SOLO LECTURA:")
