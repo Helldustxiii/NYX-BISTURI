@@ -141,3 +141,25 @@ python android-bridge/tools/nyx-dropbox list --path "/Nyx Ia"
 La App Key es un identificador público de la aplicación. En la consola de Dropbox, habilita **Allow public clients** en OAuth 2 para permitir PKCE. No hace falta registrar un Redirect URI: al omitirlo, Dropbox muestra el código para copiarlo en Termux. La autorización inicial se completa manualmente en el navegador y pegando el código de Dropbox en Termux. No guardes el refresh token en el repositorio ni lo compartas.
 
 La descarga de una imagen no implica que Qwen la haya analizado. La entrada visual requiere verificar por separado el modelo, el proyector multimodal y la versión de llama.cpp instalada en el dispositivo.
+
+
+## Dropbox desde la aplicación Android
+
+La pestaña **Dropbox** de NYX utiliza el mismo ejecutable fijo `nyx-chat` mediante Termux RUN_COMMAND. No invoca shell arbitrario.
+
+Antes de usarla, completa una sola vez la autorización OAuth PKCE en Termux:
+
+~~~sh
+export NYX_DROPBOX_APP_KEY="APP_KEY_DE_DROPBOX"
+python "$HOME/nyx-android-bridge-integrate/android-bridge/tools/nyx-dropbox" auth
+~~~
+
+En la consola de Dropbox habilita **Allow public clients** y solo los scopes `files.metadata.read` y `files.content.read`. Sustituye la App Key de ejemplo por la tuya; nunca pegues el refresh token en la app ni en el repositorio.
+
+Después, desde la pestaña Dropbox:
+- Comprobar autorización.
+- Listar una carpeta mediante una ruta absoluta, por ejemplo `/Nyx Ia`.
+- Abrir subcarpetas.
+- Descargar imágenes PNG/JPEG/WebP hasta 20 MiB a `~/NYX/Dropbox-Inbox/`.
+
+El listado inicial muestra como máximo 100 elementos por carpeta. No hay subida, borrado, movimiento ni compartición. La descarga local todavía no implica análisis visual por Qwen.
