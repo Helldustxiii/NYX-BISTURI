@@ -1,7 +1,10 @@
 import base64
 import hashlib
 import importlib.util
+import base64
+import hashlib
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +15,8 @@ SPEC = importlib.util.spec_from_file_location("dropbox_local", MODULE)
 dropbox = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
 SPEC.loader.exec_module(dropbox)
+TOOLS = MODULE.parents[1]
+sys.path.insert(0, str(TOOLS))
 
 
 class DropboxLocalTests(unittest.TestCase):
@@ -42,6 +47,17 @@ class DropboxLocalTests(unittest.TestCase):
         spec = get_connector("dropbox")
         self.assertEqual(spec["transport"], "local")
         self.assertEqual(set(spec["actions"]), {"status", "list", "download"})
+
+    def test_pkce_challenge_is_sha256_urlsafe(self):
+        verifier = "nyx-test-verifier"
+        challenge = base64.urlsafe_b64encode(
+            hashlib.sha256(verifier.encode("ascii")).digest()
+        ).rstrip(b"=").decode("ascii")
+        self.assertNotIn("=", challenge)
+        self.assertEqual(
+            base64.urlsafe_b64decode(challenge + "==="),
+            hashlib.sha256(verifier.encode("ascii")).digest(),
+        )
 
 
 if __name__ == "__main__":
