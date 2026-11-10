@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import importlib.util
+import json
 import os
 import stat
 import sys
