@@ -61,8 +61,10 @@ class RuntimeRoutingTests(unittest.TestCase):
         }
         self.get_connector = self.connectors.get
 
-    def send(self, message):
-        runtime.process_message(message, self.protocol, self.android_call, self.get_connector)
+    def send(self, message, dropbox_call=None):
+        runtime.process_message(
+            message, self.protocol, self.android_call, self.get_connector, dropbox_call
+        )
 
     def test_android_message_returns_result_with_same_id(self):
         self.send(make_message("A1", "ANDROID", {"method": "ping"}))
@@ -88,6 +90,20 @@ class RuntimeRoutingTests(unittest.TestCase):
         self.assertEqual(fields[4], "ERROR")
         self.assertEqual(fields[6], "FAIL")
         self.assertEqual(error["error"], "mcp_relay_required")
+
+
+    def test_local_dropbox_connector_is_dispatched(self):
+        dropbox_call = Mock(return_value='{"entries":[]}')
+        self.send(make_message(
+            "A8", "CONNECTOR",
+            {"service": "dropbox", "action": "list", "args": {"path": "/Nyx Ia"}},
+        ), dropbox_call=dropbox_call)
+        fields, payload = decode_reply(self.protocol.sent[0])
+        self.assertEqual(fields[1], "A8")
+        self.assertEqual(fields[4], "RESULT")
+        self.assertEqual(fields[6], "OK")
+        self.assertEqual(payload["text"], '{"entries":[]}')
+        dropbox_call.assert_called_once_with("list", {"path": "/Nyx Ia"})
 
     def test_unknown_service_and_action_fail_closed(self):
         self.send(make_message("A4", "CONNECTOR", {"service": "unknown", "action": "ping", "args": {}}))
