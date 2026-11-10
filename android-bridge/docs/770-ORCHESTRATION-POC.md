@@ -41,6 +41,18 @@ python -m unittest discover -s android-bridge/tests -v
 5. No Termux, Android application, connector registry, credential, secret, deployment configuration, or persistent memory is changed.
 6. No patch is written to disk, no Git push is performed by the executor, and no merge/deployment is initiated.
 
+## Security requirements for a future Copilot adapter
+
+The official Copilot SDK supports custom agents with per-agent tool allowlists. The future adapter must:
+
+- Start from `mode="empty"` rather than inheriting ambient CLI defaults.
+- Expose only explicitly registered application-owned tools through a session allowlist.
+- Give the executor only the task workspace and its effective grant; give the reviewer read-only tools and a separate context.
+- Use a custom permission handler and pre-tool policy checks. Never use `approve_all` as the default for this orchestrator.
+- Keep shell, network, Git push, merge, deployment, and credential access denied unless a later task-specific authorization explicitly grants a narrowly defined operation.
+
+References: [Copilot SDK custom agents and tool scoping](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/custom-agents), [multi-tenancy and the empty mode](https://docs.github.com/en/copilot/how-tos/copilot-sdk/setup/multi-tenancy), and [pre-tool use permission hooks](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/hooks).
+
 ## Next approval gate: live provider execution
 
 Before adding a real Copilot adapter, explicitly decide:
