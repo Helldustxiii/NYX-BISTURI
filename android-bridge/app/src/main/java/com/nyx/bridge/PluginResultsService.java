@@ -5,6 +5,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -62,7 +63,19 @@ public final class PluginResultsService extends IntentService {
 
         if (mode != null && mode.startsWith("dropbox")) {
             if (commandOk) {
-                ChatMessageStore.saveDropboxResult(this, payload.toString());
+                JSONObject dropboxResult = "dropbox-more".equals(mode)
+                        ? mergeDropboxPage(ChatMessageStore.getDropboxResult(this), payload)
+                        : payload;
+                ChatMessageStore.saveDropboxResult(this, dropboxResult.toString());
+            } else if ("dropbox-more".equals(mode)) {
+                JSONObject previous = ChatMessageStore.getDropboxResult(this);
+                try {
+                    previous.put("pagination_error",
+                            errorText(payload, stderr, internalError, exitCode));
+                    ChatMessageStore.saveDropboxResult(this, previous.toString());
+                } catch (JSONException ignored) {
+                    ChatMessageStore.saveDropboxResult(this, payload == null ? "{}" : payload.toString());
+                }
             } else {
                 JSONObject failed = new JSONObject();
                 try {
@@ -105,6 +118,50 @@ public final class PluginResultsService extends IntentService {
         }
 
         notifyUi();
+    }
+
+    private JSONObject mergeDropboxPage(JSONObject previous, JSONObject next) {
+        if (previous == null || !"list".equals(previous.optString("action"))) {
+            return next;
+        }
+        JSONObject oldData = previous.optJSONObject("data");
+        JSONObject newData = next.optJSONObject("data");
+        if (oldData == null || newData == null) {
+            return next;
+        }
+        JSONArray oldEntries = oldData.optJSONArray("entries");
+        JSONArray newEntries = newData.optJSONArray("entries");
+        JSONArray merged = new JSONArray();
+        if (oldEntries != null) {
+            for (int i = 0; i < oldEntries.length(); i++) {
+                JSONObject entry = oldEntries.optJSONObject(i);
+                if (entry != null) {
+                    merged.put(entry);
+                }
+            }
+        }
+        if (newEntries != null) {
+            for (int i = 0; i < newEntries.length(); i++) {
+                JSONObject entry = newEntries.optJSONObject(i);
+                if (entry != null) {
+                    merged.put(entry);
+                }
+            }
+        }
+        try {
+            newData.put("entries", merged);
+            JSONObject combined = new JSONObject(next.toString());
+            combined.put("data", newData);
+            combined.put("action", "list");
+            JSONObject oldArgs = previous.optJSONObject("args");
+            if (oldArgs != null && oldArgs.has("path")) {
+                combined.put("args", oldArgs);
+            }
+            combined.remove("pagination_error");
+            return combined;
+        } catch (JSONException error) {
+            return next;
+        }
     }
 
     private JSONObject parse(String raw) {
