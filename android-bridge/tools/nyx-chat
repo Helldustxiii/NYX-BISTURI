@@ -260,7 +260,7 @@ def dropbox_report(action: str, args: dict[str, Any] | None = None) -> dict[str,
         data = json.loads(raw)
         if not isinstance(data, dict):
             raise ValueError("dropbox_invalid_response")
-        return {"ok": True, "kind": "dropbox", "action": action, "data": data}
+        return {"ok": True, "kind": "dropbox", "action": action, "args": args or {}, "data": data}
     except (ImportError, RuntimeError, ValueError, OSError, json.JSONDecodeError) as error:
         return {"ok": False, "kind": "dropbox", "action": action, "error": str(error)}
 
@@ -271,7 +271,7 @@ def usage_error() -> dict[str, Any]:
         "kind": "chat",
         "error": (
             "Uso: nyx-chat MENSAJE | --status | --dropbox-status | "
-            "--dropbox-list RUTA | --dropbox-download RUTA"
+            "--dropbox-list RUTA | --dropbox-more CURSOR | --dropbox-download RUTA"
         ),
     }
 
@@ -284,9 +284,16 @@ def main(argv: list[str]) -> int:
         result = dropbox_report("status")
         emit(result)
         return 0 if result.get("ok") else 1
-    if len(argv) == 2 and argv[0] in ("--dropbox-list", "--dropbox-download"):
-        action = "list" if argv[0] == "--dropbox-list" else "download"
-        result = dropbox_report(action, {"path": argv[1]})
+    if len(argv) == 2 and argv[0] in (
+        "--dropbox-list", "--dropbox-more", "--dropbox-download"
+    ):
+        if argv[0] == "--dropbox-download":
+            action, args = "download", {"path": argv[1]}
+        elif argv[0] == "--dropbox-more":
+            action, args = "list", {"cursor": argv[1]}
+        else:
+            action, args = "list", {"path": argv[1]}
+        result = dropbox_report(action, args)
         emit(result)
         return 0 if result.get("ok") else 1
     if len(argv) != 1 or argv[0].startswith("--"):
