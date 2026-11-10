@@ -94,6 +94,12 @@ class DropboxLocalTests(unittest.TestCase):
         self.assertTrue(dropbox._image_signature(b"RIFFxxxxWEBPrest"))
         self.assertFalse(dropbox._image_signature(b"not an image"))
 
+    def test_image_mime_matches_detected_signature(self):
+        self.assertEqual(dropbox._image_mime(b"\x89PNG\r\n\x1a\nrest"), "image/png")
+        self.assertEqual(dropbox._image_mime(b"\xff\xd8\xffrest"), "image/jpeg")
+        self.assertEqual(dropbox._image_mime(b"RIFFxxxxWEBPrest"), "image/webp")
+        self.assertIsNone(dropbox._image_mime(b"not an image"))
+
     def test_download_rejects_relative_path(self):
         with self.assertRaisesRegex(ValueError, "absolute_path"):
             dropbox.download_image("relative/file.png")
