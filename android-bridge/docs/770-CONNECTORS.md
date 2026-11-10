@@ -109,7 +109,7 @@ La conexión requiere autorización interactiva inicial. Las llamadas posteriore
 La pestaña Dropbox de la aplicación llama a un conjunto cerrado de argumentos del script `nyx-chat`; no envía texto de usuario a un shell ni permite seleccionar ejecutables arbitrarios.
 
 Interfaz CLI fija:
-- `nyx-chat --dropbox-status`
+- `nyx-chat --dropbox-status` comprueba credenciales, renueva el token si hace falta y realiza una lectura mínima de metadatos contra Dropbox para verificar el acceso real.
 - `nyx-chat --dropbox-list "/Nyx Ia"`
 - `nyx-chat --dropbox-download "/Nyx Ia/imagen.png"`
 
