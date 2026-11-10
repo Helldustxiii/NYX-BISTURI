@@ -254,5 +254,18 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(result.error_code, "INVALID_REVIEW_REPORT")
 
 
+    def test_non_string_paths_fail_closed_without_raising(self):
+        with self.assertRaises(PolicyViolation):
+            validate_grant(
+                manifest(),
+                ExecutionGrant("task-001", (["android-bridge/docs/"],)),
+            )
+        with self.assertRaises(PolicyViolation):
+            validate_changed_paths(
+                manifest(),
+                (["android-bridge/docs/private.md"],),
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
