@@ -63,6 +63,18 @@ class DropboxCommandTests(unittest.TestCase):
         self.assertEqual(payload["kind"], "dropbox")
         self.assertEqual(payload["data"]["entries"], [])
 
+    def test_dropbox_more_uses_the_pagination_cursor(self):
+        with patch.object(NYX_CHAT, "emit") as emit, patch.object(
+            dropbox_local, "call", return_value='{"entries":[],"has_more":false,"cursor":null}'
+        ) as call:
+            result = NYX_CHAT.main(["--dropbox-more", "cursor-token-123"])
+        self.assertEqual(result, 0)
+        call.assert_called_once_with("list", {"cursor": "cursor-token-123"})
+        payload = emit.call_args.args[0]
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["action"], "list")
+        self.assertEqual(payload["args"]["cursor"], "cursor-token-123")
+
     def test_dropbox_download_is_an_allowlisted_fixed_command(self):
         with patch.object(NYX_CHAT, "emit") as emit, patch.object(
             dropbox_local, "call",
@@ -88,9 +100,10 @@ class DropboxCommandTests(unittest.TestCase):
             dropbox_local, "call"
         ) as call:
             self.assertEqual(NYX_CHAT.main(["--dropbox-list"]), 2)
+            self.assertEqual(NYX_CHAT.main(["--dropbox-more"]), 2)
             self.assertEqual(NYX_CHAT.main(["--dropbox-download", "/file.png", "extra"]), 2)
         self.assertEqual(call.call_count, 0)
-        self.assertEqual(emit.call_count, 2)
+        self.assertEqual(emit.call_count, 3)
 
 
 if __name__ == "__main__":
