@@ -192,7 +192,7 @@ Do not modify:
 - Audit events show the true state transitions without storing secrets.
 - The new package uses only Python standard library.
 - Existing 770 and chat tests remain green.
-- The only changed files are the four package files, one test file, and one documentation file (six files total).
+- The implementation changes exactly six files: four package files, one test file, and one implementation document. The approved plan is a separate seventh file on this branch.
 - No live agent provider, shell, network, Android bridge, Termux, deployment, or persistent memory is touched.
 
 ## Explicit Limitations
