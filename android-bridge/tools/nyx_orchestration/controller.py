@@ -1,6 +1,8 @@
 """Offline executor/reviewer orchestration state machine."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 from .contracts import (
     AuditEvent,
     ExecutionGrant,
@@ -33,17 +35,18 @@ def run_task(
     except PolicyViolation as error:
         return blocked(error.code)
 
+    scoped_manifest = replace(manifest, allowed_paths=grant.allowed_paths)
     events.append(AuditEvent(TaskState.AUTHORIZED, "GRANT_VALIDATED"))
     events.append(AuditEvent(TaskState.EXECUTING, "EXECUTION_STARTED"))
     try:
-        execution = executor.execute(manifest)
+        execution = executor.execute(scoped_manifest)
     except Exception:
         return blocked("EXECUTOR_FAILED")
 
     if not isinstance(execution, ExecutionReport):
         return blocked("INVALID_EXECUTION_REPORT")
     try:
-        validate_changed_paths(manifest, execution.changed_paths)
+        validate_changed_paths(scoped_manifest, execution.changed_paths)
     except PolicyViolation as error:
         return blocked(error.code, execution=execution)
     if (
@@ -57,7 +60,7 @@ def run_task(
 
     events.append(AuditEvent(TaskState.REVIEWING, "REVIEW_STARTED"))
     try:
-        review = reviewer.review(manifest, execution)
+        review = reviewer.review(scoped_manifest, execution)
     except Exception:
         return blocked("REVIEWER_FAILED", execution=execution)
     if (
