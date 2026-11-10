@@ -5,6 +5,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -62,7 +63,19 @@ public final class PluginResultsService extends IntentService {
 
         if (mode != null && mode.startsWith("dropbox")) {
             if (commandOk) {
-                ChatMessageStore.saveDropboxResult(this, payload.toString());
+                JSONObject dropboxResult = "dropbox-more".equals(mode)
+                        ? mergeDropboxPage(ChatMessageStore.getDropboxResult(this), payload)
+                        : payload;
+                ChatMessageStore.saveDropboxResult(this, dropboxResult.toString());
+            } else if ("dropbox-more".equals(mode)) {
+                JSONObject previous = ChatMessageStore.getDropboxResult(this);
+                try {
+                    previous.put("pagination_error",
+                            errorText(payload, stderr, internalError, exitCode));
+                    ChatMessageStore.saveDropboxResult(this, previous.toString());
+                } catch (JSONException ignored) {
+                    ChatMessageStore.saveDropboxResult(this, payload == null ? "{}" : payload.toString());
+                }
             } else {
                 JSONObject failed = new JSONObject();
                 try {
@@ -107,6 +120,72 @@ public final class PluginResultsService extends IntentService {
         notifyUi();
     }
 
+    private JSONObject mergeDropboxPage(JSONObject previous, JSONObject next) {
+        if (previous == null || !"list".equals(previous.optString("action"))) {
+            return next;
+        }
+        JSONObject oldData = previous.optJSONObject("data");
+        JSONObject newData = next.optJSONObject("data");
+        JSONObject oldArgs = previous.optJSONObject("args");
+        JSONObject nextArgs = next.optJSONObject("args");
+        if (oldData == null || newData == null || oldArgs == null || nextArgs == null) {
+            return withPaginationError(previous,
+                    "No se pudo validar la carpeta del siguiente bloque. Vuelve a listar.");
+        }
+
+        String currentPath = oldArgs.optString("path", "");
+        String expectedPath = nextArgs.optString("expected_path", "");
+        String currentCursor = oldData.optString("cursor", "");
+        String requestedCursor = nextArgs.optString("cursor", "");
+        if (!currentPath.equals(expectedPath) || currentCursor.isEmpty()
+                || !currentCursor.equals(requestedCursor)) {
+            return withPaginationError(previous,
+                    "La carpeta o el cursor cambió mientras se cargaba. Vuelve a listar la carpeta.");
+        }
+
+        JSONArray oldEntries = oldData.optJSONArray("entries");
+        JSONArray newEntries = newData.optJSONArray("entries");
+        JSONArray merged = new JSONArray();
+        if (oldEntries != null) {
+            for (int i = 0; i < oldEntries.length(); i++) {
+                JSONObject entry = oldEntries.optJSONObject(i);
+                if (entry != null) {
+                    merged.put(entry);
+                }
+            }
+        }
+        if (newEntries != null) {
+            for (int i = 0; i < newEntries.length(); i++) {
+                JSONObject entry = newEntries.optJSONObject(i);
+                if (entry != null) {
+                    merged.put(entry);
+                }
+            }
+        }
+        try {
+            newData.put("entries", merged);
+            JSONObject combined = new JSONObject(next.toString());
+            combined.put("data", newData);
+            combined.put("action", "list");
+            combined.put("args", oldArgs);
+            combined.remove("pagination_error");
+            return combined;
+        } catch (JSONException error) {
+            return withPaginationError(previous,
+                    "No se pudo combinar la página de Dropbox. Vuelve a listar la carpeta.");
+        }
+    }
+
+    private JSONObject withPaginationError(JSONObject source, String message) {
+        try {
+            JSONObject result = new JSONObject(source.toString());
+            result.put("pagination_error", message);
+            return result;
+        } catch (JSONException error) {
+            return source;
+        }
+    }
+
     private JSONObject parse(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
             return null;
@@ -139,7 +218,15 @@ public final class PluginResultsService extends IntentService {
     }
 
     private void storeFailure(String resultId, String mode, String message) {
-        if (mode != null && mode.startsWith("dropbox")) {
+        if ("dropbox-more".equals(mode)) {
+            JSONObject previous = ChatMessageStore.getDropboxResult(this);
+            try {
+                previous.put("pagination_error", message);
+                ChatMessageStore.saveDropboxResult(this, previous.toString());
+            } catch (JSONException ignored) {
+                ChatMessageStore.saveDropboxResult(this, "{}");
+            }
+        } else if (mode != null && mode.startsWith("dropbox")) {
             JSONObject failed = new JSONObject();
             try {
                 failed.put("ok", false);

@@ -117,4 +117,4 @@ El helper devuelve JSON con `ok`, `kind`, `action` y `data` o `error`. La app re
 
 La autorización inicial permanece manual en Termux: hay que configurar `NYX_DROPBOX_APP_KEY` y ejecutar `nyx-dropbox auth`. No se incorpora un formulario de tokens en Android. La app solo lista, abre carpetas y descarga imágenes PNG/JPEG/WebP. La respuesta de descarga indica la ruta local en `~/NYX/Dropbox-Inbox/`; no afirma que Qwen haya procesado la imagen.
 
-El listado de esta primera versión limita la consulta a los primeros 100 elementos por carpeta; la paginación se reserva para una mejora posterior.
+El listado devuelve hasta 100 elementos por llamada. Si Dropbox entrega `has_more` y un cursor, la aplicación puede pedir la página siguiente mediante `nyx-chat --dropbox-more CURSOR RUTA_ACTUAL`; el servicio de resultados combina las entradas anteriores y nuevas y conserva el cursor más reciente.

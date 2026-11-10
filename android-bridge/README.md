@@ -162,4 +162,4 @@ Después, desde la pestaña Dropbox:
 - Abrir subcarpetas.
 - Descargar imágenes PNG/JPEG/WebP hasta 20 MiB a `~/NYX/Dropbox-Inbox/`.
 
-El listado inicial muestra como máximo 100 elementos por carpeta. No hay subida, borrado, movimiento ni compartición. La descarga local todavía no implica análisis visual por Qwen.
+El listado muestra 100 elementos por página. Cuando Dropbox devuelve un cursor, la pestaña permite cargar los siguientes 100 sin perder los resultados anteriores. No hay subida, borrado, movimiento ni compartición. La descarga local todavía no implica análisis visual por Qwen.

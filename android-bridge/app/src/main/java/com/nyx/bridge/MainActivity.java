@@ -441,10 +441,22 @@ public class MainActivity extends Activity {
                 } else {
                     page.addView(infoCard("Carpeta vacía", "Dropbox no devolvió elementos en esta carpeta."));
                 }
-                if (data.optBoolean("has_more", false)) {
-                    page.addView(infoCard("Hay más elementos",
-                            "Esta primera versión muestra hasta 100 elementos por carpeta. "
-                                    + "La paginación avanzada queda pendiente."));
+                String nextCursor = data.optString("cursor", "");
+                if (data.optBoolean("has_more", false) && !nextCursor.isEmpty()) {
+                    Button more = actionButton("Cargar siguientes 100");
+                    LinearLayout.LayoutParams moreParams = fullWidthButton();
+                    moreParams.topMargin = dp(9);
+                    page.addView(more, moreParams);
+                    more.setOnClickListener(view -> {
+                        if (requestDropboxMore(nextCursor)) {
+                            more.setEnabled(false);
+                            more.setText("Cargando…");
+                        }
+                    });
+                }
+                String pageError = result.optString("pagination_error", "");
+                if (!pageError.isEmpty()) {
+                    page.addView(infoCard("No se pudo cargar la página siguiente", pageError));
                 }
             }
         }
@@ -531,6 +543,27 @@ public class MainActivity extends Activity {
         } catch (Exception error) {
             Toast.makeText(this, "No se pudo listar la carpeta: " + error.getMessage(),
                     Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean requestDropboxMore(String cursor) {
+        if (!ensureTermuxReady()) {
+            return false;
+        }
+        if (cursor == null || cursor.isEmpty()) {
+            Toast.makeText(this, "Dropbox no devolvió un cursor de paginación.",
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+        try {
+            TermuxCommandClient.requestDropboxMore(this, cursor, dropboxPath);
+            Toast.makeText(this, "Cargando los siguientes 100 elementos…",
+                    Toast.LENGTH_SHORT).show();
+            return true;
+        } catch (Exception error) {
+            Toast.makeText(this, "No se pudo continuar el listado: " + error.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            return false;
         }
     }
 

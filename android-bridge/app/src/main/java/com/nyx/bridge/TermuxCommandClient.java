@@ -70,6 +70,15 @@ final class TermuxCommandClient {
         execute(context, new String[]{"--dropbox-list", path}, "dropbox-result", "dropbox-list");
     }
 
+    static void requestDropboxMore(Context context, String cursor, String expectedPath) {
+        execute(
+                context,
+                new String[]{"--dropbox-more", cursor, expectedPath},
+                "dropbox-result",
+                "dropbox-more"
+        );
+    }
+
     static void requestDropboxDownload(Context context, String path) {
         execute(context, new String[]{"--dropbox-download", path}, "dropbox-result", "dropbox-download");
     }

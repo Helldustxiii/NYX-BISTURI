@@ -88,6 +88,28 @@ class DropboxLocalTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "permissions_too_open"):
                     dropbox._load_config()
 
+    def test_list_folder_continues_from_the_supplied_cursor(self):
+        response = {
+            "entries": [{
+                ".tag": "file",
+                "name": "next.png",
+                "path_display": "/folder/next.png",
+                "size": 123,
+                "server_modified": "2026-11-10T00:00:00Z",
+            }],
+            "has_more": False,
+            "cursor": "cursor-after-page-two",
+        }
+        with patch.object(dropbox, "_rpc", return_value=response) as rpc:
+            result = dropbox.list_folder(path="/ignored-on-continue", cursor="cursor-page-two")
+
+        rpc.assert_called_once_with(
+            "files/list_folder/continue", {"cursor": "cursor-page-two"}
+        )
+        self.assertEqual(result["entries"][0]["path"], "/folder/next.png")
+        self.assertFalse(result["has_more"])
+        self.assertEqual(result["cursor"], "cursor-after-page-two")
+
     def test_image_signatures(self):
         self.assertTrue(dropbox._image_signature(b"\x89PNG\r\n\x1a\nrest"))
         self.assertTrue(dropbox._image_signature(b"\xff\xd8\xffrest"))
