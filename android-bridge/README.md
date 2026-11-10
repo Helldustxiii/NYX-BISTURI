@@ -147,3 +147,19 @@ python -m unittest discover -s android-bridge/tests -v
 ```
 
 **Estado de verificación:** la prueba de la CI verifica el enrutamiento con dependencias simuladas. La ejecución del nuevo runtime contra el FIFO y el dispositivo real debe confirmarse en Termux antes de declararlo operativo. No se inicia automáticamente ni modifica el Jardín.
+
+
+## Dropbox local para NYX-BISTURÍ
+
+Se ha añadido un conector Dropbox de solo lectura en `tools/connectors/dropbox_local.py` y un asistente CLI en `tools/nyx-dropbox`.
+
+- OAuth 2.0 Authorization Code + PKCE; no usa App Secret.
+- Scopes mínimos de lectura: metadatos, contenido y cuenta.
+- Refresh token en `~/.config/nyx/dropbox.json` (directorio 0700, archivo 0600).
+- Acciones 770: `status`, `list`, `download`.
+- Descargas de imágenes PNG/JPEG/WebP, máximo 20 MiB, a `~/NYX/Dropbox-Inbox/`.
+- No hay operaciones de escritura, borrado, movimiento ni enlaces compartidos.
+
+La App Key debe configurarse en Termux como `NYX_DROPBOX_APP_KEY` y la autorización debe completarse manualmente. El token no se incluye en el repositorio.
+
+La descarga local no implica todavía análisis visual: el soporte multimodal del modelo Qwen instalado debe verificarse por separado.
