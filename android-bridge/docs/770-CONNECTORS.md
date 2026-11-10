@@ -72,14 +72,15 @@ Dropbox se ejecuta como conector local de Termux, no como MCP. La primera versi�
 ### Preparación única
 
 1. Crea una aplicación Dropbox con acceso Full Dropbox y habilita únicamente los scopes `files.metadata.read` y `files.content.read`.
-2. En Termux, desde la raíz del repositorio, define la App Key:
+2. En la sección OAuth 2 de la consola, habilita **Allow public clients** para PKCE. No registres Redirect URI: se omite intencionadamente y Dropbox mostrará el código de autorización para copiarlo en Termux.
+3. En Termux, desde la raíz del repositorio, define la App Key:
 
 ~~~sh
 export NYX_DROPBOX_APP_KEY="APP_KEY_DE_DROPBOX"
 ~~~
 
-3. Ejecuta `python android-bridge/tools/nyx-dropbox auth` y completa la autorización en el navegador. Dropbox mostrará un código que se pega de vuelta en Termux.
-4. El refresh token se guarda en `~/.config/nyx/dropbox.json`; directorio 0700 y archivo 0600. No lo subas al repositorio ni lo compartas.
+4. Ejecuta `python android-bridge/tools/nyx-dropbox auth` y completa la autorización en el navegador. Dropbox mostrará un código que se pega de vuelta en Termux.
+5. El refresh token se guarda en `~/.config/nyx/dropbox.json`; directorio 0700 y archivo 0600. No lo subas al repositorio ni lo compartas.
 
 ### Uso
 
