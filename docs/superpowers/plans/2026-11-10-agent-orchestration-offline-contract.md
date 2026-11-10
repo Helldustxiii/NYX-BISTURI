@@ -20,7 +20,7 @@
 - Do not add dependencies or install Copilot SDK / Copilot CLI.
 - Do not call external services, authenticate to an agent provider, invoke shell commands from an executor, or execute generated code.
 - Do not connect the controller to the 770 FIFO. The runtime remains a single-reader transport and is not an agent execution bus.
-- The executor may return a declarative patch/report only. It may not write files, push, merge, deploy, or expand its scope.
+- The executor interface returns a declarative patch/report only and exposes no shell or network methods. The in-process fake adapters are trusted test code, not an isolation boundary; no untrusted model code is run. No adapter may write files, push, merge, deploy, or expand its scope.
 - The reviewer receives task and execution evidence through a separate interface and returns a verdict. This Python interface is not a security sandbox; real untrusted agents require process/tool isolation in a later phase.
 - No push to main, merge, deployment, credential changes, permission changes, or persistent memory changes.
 - This is **Phase B1: offline contract proof**. It does not claim that a real Copilot/Qwen agent has executed a task.
@@ -31,7 +31,7 @@
 2. A manifest that allows `.env`, `.git`, `JARDIN`, `android-bridge/app/`, or any root outside the two allowed roots must fail closed.
 3. A task grant for a different task ID or a broader path set must not authorize execution.
 4. An executor that reports a changed path outside the manifest scope must be blocked before review or acceptance.
-5. A reviewer rejection or exception must never produce an accepted task; audit state must preserve the actual terminal outcome.
+5. A reviewer rejection or exception, or an empty execution report, must never produce an accepted task; audit state must preserve the actual terminal outcome.
 
 ---
 
@@ -124,6 +124,7 @@ Do not modify:
   - `test_out_of_scope_executor_result_is_blocked_before_review`: invalid changed path prevents reviewer invocation.
   - `test_executor_exception_is_fail_closed`: executor exceptions produce BLOCKED with a sanitized error code.
   - `test_reviewer_exception_is_fail_closed`: reviewer exceptions never produce ACCEPTED.
+  - `test_empty_execution_report_is_blocked_before_review`: an empty changed-path list, patch, or evidence list cannot proceed to review.
   - `test_audit_events_follow_the_actual_state_transitions`: event sequence is deterministic and ends in the real terminal state.
 
 - [ ] **Step 2: Run the focused tests and verify RED**
@@ -135,7 +136,8 @@ Do not modify:
   - Record state transitions in order: PLANNED → AUTHORIZED → EXECUTING → REVIEWING → ACCEPTED/REJECTED.
   - On policy or adapter failure, stop immediately in BLOCKED; do not run later stages.
   - Validate all reported changed paths before the reviewer sees the report.
-  - Require a non-empty patch and evidence before entering REVIEWING.
+  - Require non-empty changed paths, patch, and evidence before entering REVIEWING.
+  - Use stable error codes: `INVALID_MANIFEST`, `INVALID_GRANT`, `EXECUTOR_FAILED`, `REVIEWER_FAILED`, `OUT_OF_SCOPE_CHANGE`, and `EMPTY_EXECUTION_REPORT`.
   - Never infer acceptance from executor success, absence of findings, or an exception.
   - Do not store raw environment data, credentials, arbitrary adapter payloads, or full exception strings in the audit log.
 
@@ -182,7 +184,7 @@ Do not modify:
 - Audit events show the true state transitions without storing secrets.
 - The new package uses only Python standard library.
 - Existing 770 and chat tests remain green.
-- The only changed files are the three package files, one test file, and one documentation file.
+- The only changed files are the four package files, one test file, and one documentation file (six files total).
 - No live agent provider, shell, network, Android bridge, Termux, deployment, or persistent memory is touched.
 
 ## Explicit Limitations
