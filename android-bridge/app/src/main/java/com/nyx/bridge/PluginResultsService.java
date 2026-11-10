@@ -196,7 +196,15 @@ public final class PluginResultsService extends IntentService {
     }
 
     private void storeFailure(String resultId, String mode, String message) {
-        if (mode != null && mode.startsWith("dropbox")) {
+        if ("dropbox-more".equals(mode)) {
+            JSONObject previous = ChatMessageStore.getDropboxResult(this);
+            try {
+                previous.put("pagination_error", message);
+                ChatMessageStore.saveDropboxResult(this, previous.toString());
+            } catch (JSONException ignored) {
+                ChatMessageStore.saveDropboxResult(this, "{}");
+            }
+        } else if (mode != null && mode.startsWith("dropbox")) {
             JSONObject failed = new JSONObject();
             try {
                 failed.put("ok", false);
