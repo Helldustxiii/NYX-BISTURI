@@ -553,8 +553,8 @@ public class MainActivity extends Activity {
     }
 
     private void copyDropboxAuthorizationCommand() {
-        String command = "export NYX_DROPBOX_APP_KEY=\\"APP_KEY_DE_DROPBOX\\"\\n"
-                + "python \\"$HOME/nyx-android-bridge-integrate/android-bridge/tools/nyx-dropbox\\" auth";
+        String command = "export NYX_DROPBOX_APP_KEY=\"APP_KEY_DE_DROPBOX\"\n"
+                + "python \"$HOME/nyx-android-bridge-integrate/android-bridge/tools/nyx-dropbox\" auth";
         ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         if (clipboard != null) {
             clipboard.setPrimaryClip(ClipData.newPlainText("NYX Dropbox OAuth PKCE", command));
