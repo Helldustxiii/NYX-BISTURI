@@ -36,7 +36,10 @@ def token_path() -> Path:
 
 def _pkce_pair() -> tuple[str, str]:
     """Return an RFC 7636 verifier and its S256 URL-safe challenge."""
-    verifier, challenge = _pkce_pair()
+    verifier = secrets.token_urlsafe(64)
+    challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode("ascii")).digest()
+    ).rstrip(b"=").decode("ascii")
     return verifier, challenge
 
 
@@ -129,10 +132,7 @@ def authorize() -> str:
     app_key = os.environ.get("NYX_DROPBOX_APP_KEY", "").strip()
     if not app_key:
         raise RuntimeError("set_NYX_DROPBOX_APP_KEY_from_Dropbox_App_Console_first")
-    verifier = secrets.token_urlsafe(64)
-    challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(verifier.encode("ascii")).digest()
-    ).rstrip(b"=").decode("ascii")
+    verifier, challenge = _pkce_pair()
     params = {
         "client_id": app_key,
         "response_type": "code",
