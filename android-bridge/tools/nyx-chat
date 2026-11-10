@@ -249,13 +249,48 @@ def send_message(message: str) -> dict[str, Any]:
         lock_handle.close()
 
 
+def dropbox_report(action: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Expose only the read-only Dropbox actions required by NYX Android."""
+    try:
+        from connectors.dropbox_local import call as dropbox_call
+
+        if action not in ("status", "list", "download"):
+            raise ValueError("dropbox_action_not_allowed")
+        raw = dropbox_call(action, args or {})
+        data = json.loads(raw)
+        if not isinstance(data, dict):
+            raise ValueError("dropbox_invalid_response")
+        return {"ok": True, "kind": "dropbox", "action": action, "data": data}
+    except (ImportError, RuntimeError, ValueError, OSError, json.JSONDecodeError) as error:
+        return {"ok": False, "kind": "dropbox", "action": action, "error": str(error)}
+
+
+def usage_error() -> dict[str, Any]:
+    return {
+        "ok": False,
+        "kind": "chat",
+        "error": (
+            "Uso: nyx-chat MENSAJE | --status | --dropbox-status | "
+            "--dropbox-list RUTA | --dropbox-download RUTA"
+        ),
+    }
+
+
 def main(argv: list[str]) -> int:
     if argv == ["--status"]:
         emit(status_report())
         return 0
-    if len(argv) != 1:
-        emit({"ok": False, "kind": "chat",
-              "error": "Uso: nyx-chat MENSAJE | nyx-chat --status"})
+    if argv == ["--dropbox-status"]:
+        result = dropbox_report("status")
+        emit(result)
+        return 0 if result.get("ok") else 1
+    if len(argv) == 2 and argv[0] in ("--dropbox-list", "--dropbox-download"):
+        action = "list" if argv[0] == "--dropbox-list" else "download"
+        result = dropbox_report(action, {"path": argv[1]})
+        emit(result)
+        return 0 if result.get("ok") else 1
+    if len(argv) != 1 or argv[0].startswith("--"):
+        emit(usage_error())
         return 2
     result = send_message(argv[0])
     emit(result)
