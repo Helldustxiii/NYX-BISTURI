@@ -48,6 +48,8 @@ public class MainActivity extends Activity {
     private FrameLayout content;
     private String currentTab = "chat";
     private EditText composer;
+    private EditText dropboxPathInput;
+    private String dropboxPath = "/Nyx Ia";
     private boolean receiverRegistered;
 
     private final BroadcastReceiver updates = new BroadcastReceiver() {
@@ -151,7 +153,8 @@ public class MainActivity extends Activity {
         navigation.setPadding(dp(8), dp(8), dp(8), dp(8));
         navigation.setBackgroundColor(Color.rgb(17, 14, 22));
 
-        navigation.addView(navButton("Conversar", "chat"), weighted());
+        navigation.addView(navButton("Chat", "chat"), weighted());
+        navigation.addView(navButton("Dropbox", "dropbox"), weighted());
         navigation.addView(navButton("Sistema", "system"), weighted());
         navigation.addView(navButton("Ajustes", "settings"), weighted());
         root.addView(navigation);
@@ -181,7 +184,9 @@ public class MainActivity extends Activity {
             return;
         }
         content.removeAllViews();
-        if ("system".equals(currentTab)) {
+        if ("dropbox".equals(currentTab)) {
+            content.addView(createDropboxScreen());
+        } else if ("system".equals(currentTab)) {
             content.addView(createSystemScreen());
         } else if ("settings".equals(currentTab)) {
             content.addView(createSettingsScreen());
@@ -346,6 +351,219 @@ public class MainActivity extends Activity {
         }
     }
 
+    private View createDropboxScreen() {
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(16), dp(14), dp(16), dp(24));
+
+        page.addView(label("Dropbox · biblioteca local", 18, TEXT, true));
+        page.addView(infoCard("Acceso de solo lectura",
+                "NYX puede listar carpetas y descargar imágenes PNG, JPEG y WebP. "
+                        + "No puede subir, borrar, mover ni compartir archivos. "
+                        + "Las imágenes descargadas se guardan en ~/NYX/Dropbox-Inbox/."));
+
+        Button status = secondaryButton("Comprobar autorización");
+        LinearLayout.LayoutParams statusParams = fullWidthButton();
+        statusParams.topMargin = dp(10);
+        page.addView(status, statusParams);
+        status.setOnClickListener(view -> requestDropboxStatus());
+
+        page.addView(label("Carpeta de Dropbox", 13, TEXT, true));
+        dropboxPathInput = new EditText(this);
+        dropboxPathInput.setSingleLine(true);
+        dropboxPathInput.setTextColor(TEXT);
+        dropboxPathInput.setHintTextColor(MUTED);
+        dropboxPathInput.setTextSize(13);
+        dropboxPathInput.setHint("/Nyx Ia/Recursos Visuales");
+        dropboxPathInput.setText(dropboxPath);
+        dropboxPathInput.setPadding(dp(12), dp(11), dp(12), dp(11));
+        dropboxPathInput.setBackground(round(PANEL, dp(12)));
+        LinearLayout.LayoutParams pathParams = fullWidthButton();
+        pathParams.topMargin = dp(7);
+        page.addView(dropboxPathInput, pathParams);
+
+        Button list = actionButton("Listar carpeta");
+        LinearLayout.LayoutParams listParams = fullWidthButton();
+        listParams.topMargin = dp(8);
+        page.addView(list, listParams);
+        list.setOnClickListener(view -> {
+            String value = dropboxPathInput.getText().toString().trim();
+            dropboxPath = value;
+            requestDropboxList(value);
+        });
+
+        Button auth = secondaryButton("Copiar comando de autorización");
+        LinearLayout.LayoutParams authParams = fullWidthButton();
+        authParams.topMargin = dp(8);
+        page.addView(auth, authParams);
+        auth.setOnClickListener(view -> copyDropboxAuthorizationCommand());
+
+        page.addView(infoCard("Primera conexión",
+                "Crea una aplicación Dropbox con Full Dropbox, habilita únicamente "
+                        + "files.metadata.read y files.content.read y activa Allow public clients. "
+                        + "Después completa una sola vez el flujo OAuth PKCE desde Termux. "
+                        + "No pegues aquí ni compartas el refresh token."));
+
+        JSONObject result = ChatMessageStore.getDropboxResult(this);
+        if (result.length() == 0 || result.optString("kind").isEmpty()) {
+            page.addView(infoCard("Sin consultas todavía",
+                    "Comprueba la autorización y después lista /Nyx Ia para navegar por tu biblioteca."));
+        } else if (!result.optBoolean("ok", false)) {
+            page.addView(infoCard("Dropbox no disponible",
+                    result.optString("error", "No se pudo completar la operación.")));
+        } else {
+            String action = result.optString("action", "");
+            JSONObject data = result.optJSONObject("data");
+            if ("status".equals(action) && data != null) {
+                page.addView(infoCard("Autorización correcta",
+                        "Credenciales locales encontradas. Permisos: "
+                                + data.optString("scope", "no indicados")
+                                + ". El token se renueva en Termux cuando caduca."));
+            } else if ("download".equals(action) && data != null) {
+                page.addView(infoCard("Imagen descargada",
+                        data.optString("name", "Archivo")
+                                + "\n" + data.optString("path", "")
+                                + "\n" + data.optLong("bytes", 0) + " bytes"));
+            } else if ("list".equals(action) && data != null) {
+                JSONArray entries = data.optJSONArray("entries");
+                page.addView(label(
+                        "Contenido · " + (entries == null ? 0 : entries.length()) + " elementos",
+                        14, TEXT, true
+                ));
+                if (entries != null && entries.length() > 0) {
+                    for (int i = 0; i < entries.length(); i++) {
+                        JSONObject entry = entries.optJSONObject(i);
+                        if (entry != null) {
+                            page.addView(dropboxEntryRow(entry));
+                        }
+                    }
+                } else {
+                    page.addView(infoCard("Carpeta vacía", "Dropbox no devolvió elementos en esta carpeta."));
+                }
+                if (data.optBoolean("has_more", false)) {
+                    page.addView(infoCard("Hay más elementos",
+                            "Esta primera versión muestra hasta 100 elementos por carpeta. "
+                                    + "La paginación avanzada queda pendiente."));
+                }
+            }
+        }
+
+        scroll.addView(page);
+        return scroll;
+    }
+
+    private View dropboxEntryRow(JSONObject entry) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(12), dp(9), dp(9), dp(9));
+        row.setBackground(round(PANEL, dp(13)));
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, -2
+        );
+        rowParams.topMargin = dp(7);
+        row.setLayoutParams(rowParams);
+
+        String name = entry.optString("name", "Elemento");
+        String type = entry.optString("type", "");
+        String path = entry.optString("path", "");
+        long size = entry.optLong("size", 0);
+
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.VERTICAL);
+        details.addView(label(name, 12, TEXT, true));
+        details.addView(label(
+                "folder".equals(type) ? "Carpeta" : (size > 0 ? size + " bytes" : "Archivo"),
+                10, MUTED, false
+        ));
+        row.addView(details, new LinearLayout.LayoutParams(0, -2, 1));
+
+        if ("folder".equals(type)) {
+            Button open = secondaryButton("Abrir");
+            row.addView(open, new LinearLayout.LayoutParams(dp(76), dp(40)));
+            open.setOnClickListener(view -> {
+                dropboxPath = path;
+                if (dropboxPathInput != null) {
+                    dropboxPathInput.setText(path);
+                }
+                requestDropboxList(path);
+            });
+        } else if (isDropboxImage(path)) {
+            Button download = actionButton("Descargar");
+            row.addView(download, new LinearLayout.LayoutParams(dp(96), dp(40)));
+            download.setOnClickListener(view -> requestDropboxDownload(path));
+        }
+        return row;
+    }
+
+    private boolean isDropboxImage(String path) {
+        String lower = path == null ? "" : path.toLowerCase(java.util.Locale.ROOT);
+        return lower.endsWith(".png") || lower.endsWith(".jpg")
+                || lower.endsWith(".jpeg") || lower.endsWith(".webp");
+    }
+
+    private void requestDropboxStatus() {
+        if (!ensureTermuxReady()) {
+            return;
+        }
+        try {
+            TermuxCommandClient.requestDropboxStatus(this);
+            Toast.makeText(this, "Comprobando autorización de Dropbox…", Toast.LENGTH_SHORT).show();
+        } catch (Exception error) {
+            Toast.makeText(this, "No se pudo consultar Dropbox: " + error.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void requestDropboxList(String path) {
+        if (!ensureTermuxReady()) {
+            return;
+        }
+        if (path == null || (!path.isEmpty() && !path.startsWith("/"))) {
+            Toast.makeText(this, "La ruta debe ser absoluta en Dropbox, por ejemplo /Nyx Ia.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            TermuxCommandClient.requestDropboxList(this, path);
+            Toast.makeText(this, "Consultando carpeta de Dropbox…", Toast.LENGTH_SHORT).show();
+        } catch (Exception error) {
+            Toast.makeText(this, "No se pudo listar la carpeta: " + error.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void requestDropboxDownload(String path) {
+        if (!ensureTermuxReady()) {
+            return;
+        }
+        if (path == null || !path.startsWith("/") || !isDropboxImage(path)) {
+            Toast.makeText(this, "Solo se pueden descargar imágenes PNG, JPEG o WebP.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            TermuxCommandClient.requestDropboxDownload(this, path);
+            Toast.makeText(this, "Descargando imagen en NYX/Dropbox-Inbox…", Toast.LENGTH_SHORT).show();
+        } catch (Exception error) {
+            Toast.makeText(this, "No se pudo descargar la imagen: " + error.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void copyDropboxAuthorizationCommand() {
+        String command = "export NYX_DROPBOX_APP_KEY=\\"APP_KEY_DE_DROPBOX\\"\\n"
+                + "python \\"$HOME/nyx-android-bridge-integrate/android-bridge/tools/nyx-dropbox\\" auth";
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(ClipData.newPlainText("NYX Dropbox OAuth PKCE", command));
+            Toast.makeText(this,
+                    "Comando copiado. Sustituye APP_KEY_DE_DROPBOX y ejecútalo en Termux.",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private View createSystemScreen() {
         ScrollView scroll = new ScrollView(this);
         LinearLayout page = new LinearLayout(this);
@@ -485,9 +703,9 @@ public class MainActivity extends Activity {
         });
 
         page.addView(infoCard("Privacidad y seguridad",
-                "NYX solo solicita ejecutar el script nyx-chat. El mensaje se entrega como argumento, "
-                        + "no como código shell. El script solo acepta conversación y diagnóstico; "
-                        + "no ofrece ejecución arbitraria de comandos."));
+                "NYX solo ejecuta el script nyx-chat mediante RUN_COMMAND. El mensaje y las rutas de Dropbox "
+                        + "se entregan como argumentos, no como código shell. El script acepta conversación, "
+                        + "diagnóstico y tres acciones Dropbox de solo lectura; no ofrece ejecución arbitraria."));
         Button clear = secondaryButton("Borrar historial local");
         LinearLayout.LayoutParams clearParams = fullWidthButton();
         clearParams.topMargin = dp(10);
