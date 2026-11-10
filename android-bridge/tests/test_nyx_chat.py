@@ -2,12 +2,16 @@ import importlib.machinery
 import importlib.util
 import pathlib
 import unittest
+import sys
+from unittest.mock import patch
 
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "tools" / "nyx-chat"
 LOADER = importlib.machinery.SourceFileLoader("nyx_chat", str(SCRIPT))
 SPEC = importlib.util.spec_from_loader(LOADER.name, LOADER)
 NYX_CHAT = importlib.util.module_from_spec(SPEC)
 LOADER.exec_module(NYX_CHAT)
+sys.path.insert(0, str(SCRIPT.parent))
+from connectors import dropbox_local
 
 
 class ProtocolParsingTests(unittest.TestCase):
@@ -41,6 +45,52 @@ class ProtocolParsingTests(unittest.TestCase):
 
     def test_reject_non_protocol_line(self):
         self.assertIsNone(NYX_CHAT.parse_packet("not a 770 packet"))
+
+
+
+
+class DropboxCommandTests(unittest.TestCase):
+
+    def test_dropbox_list_is_an_allowlisted_fixed_command(self):
+        with patch.object(NYX_CHAT, "emit") as emit, patch.object(
+            dropbox_local, "call", return_value='{"entries":[]}'
+        ) as call:
+            result = NYX_CHAT.main(["--dropbox-list", "/Nyx Ia/Recursos"])
+        self.assertEqual(result, 0)
+        call.assert_called_once_with("list", {"path": "/Nyx Ia/Recursos"})
+        payload = emit.call_args.args[0]
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["kind"], "dropbox")
+        self.assertEqual(payload["data"]["entries"], [])
+
+    def test_dropbox_download_is_an_allowlisted_fixed_command(self):
+        with patch.object(NYX_CHAT, "emit") as emit, patch.object(
+            dropbox_local, "call",
+            return_value='{"downloaded":true,"name":"image.png","path":"/tmp/image.png"}',
+        ) as call:
+            result = NYX_CHAT.main(["--dropbox-download", "/Nyx Ia/image.png"])
+        self.assertEqual(result, 0)
+        call.assert_called_once_with("download", {"path": "/Nyx Ia/image.png"})
+        self.assertTrue(emit.call_args.args[0]["data"]["downloaded"])
+
+    def test_dropbox_status_returns_authorization_error_without_leaking_tokens(self):
+        with patch.object(NYX_CHAT, "emit") as emit, patch.object(
+            dropbox_local, "call", side_effect=RuntimeError("dropbox_not_authorized")
+        ):
+            result = NYX_CHAT.main(["--dropbox-status"])
+        self.assertEqual(result, 1)
+        payload = emit.call_args.args[0]
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["error"], "dropbox_not_authorized")
+
+    def test_dropbox_flags_reject_missing_or_extra_arguments(self):
+        with patch.object(NYX_CHAT, "emit") as emit, patch.object(
+            dropbox_local, "call"
+        ) as call:
+            self.assertEqual(NYX_CHAT.main(["--dropbox-list"]), 2)
+            self.assertEqual(NYX_CHAT.main(["--dropbox-download", "/file.png", "extra"]), 2)
+        self.assertEqual(call.call_count, 0)
+        self.assertEqual(emit.call_count, 2)
 
 
 if __name__ == "__main__":
