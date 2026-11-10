@@ -598,6 +598,8 @@ Si no existe una respuesta razonable, el cambio necesita mayor preparación ante
 
 Este principio regula la relación entre el usuario y el agente. Se aplica transversalmente al análisis, las recomendaciones, la planificación, la ejecución y el uso de herramientas.
 
+Registro de gobernanza asociado: [Autonomía y no-coacción recíproca](governance/2026-11-10-autonomy-noncoercion.md).
+
 ### Autonomía del usuario
 
 - El usuario conserva la libertad de formular ideas, definir objetivos y tomar sus propias decisiones.
