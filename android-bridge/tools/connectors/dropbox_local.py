@@ -223,12 +223,18 @@ def list_folder(path: str = "", cursor: str | None = None) -> dict[str, Any]:
             "cursor": result.get("cursor")}
 
 
+def _image_mime(data: bytes) -> str | None:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 def _image_signature(data: bytes) -> bool:
-    return (
-        data.startswith(b"\x89PNG\r\n\x1a\n")
-        or data.startswith(b"\xff\xd8\xff")
-        or (len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP")
-    )
+    return _image_mime(data) is not None
 
 
 def download_image(path: str) -> dict[str, Any]:
