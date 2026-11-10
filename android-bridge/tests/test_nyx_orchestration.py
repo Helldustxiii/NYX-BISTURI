@@ -99,9 +99,11 @@ class FakeExecutor:
         )
         self.error = error
         self.calls = 0
+        self.received_manifest = None
 
     def execute(self, task):
         self.calls += 1
+        self.received_manifest = task
         if self.error:
             raise self.error
         return self.report
@@ -112,9 +114,11 @@ class FakeReviewer:
         self.report = report or ReviewReport(True, ())
         self.error = error
         self.calls = 0
+        self.received_manifest = None
 
     def review(self, task, execution):
         self.calls += 1
+        self.received_manifest = task
         if self.error:
             raise self.error
         return self.report
@@ -266,6 +270,39 @@ class ControllerTests(unittest.TestCase):
                 (["android-bridge/docs/private.md"],),
             )
 
+
+
+    def test_effective_grant_scope_is_passed_to_executor_and_reviewer(self):
+        executor = FakeExecutor()
+        reviewer = FakeReviewer()
+        result = run_task(
+            manifest(),
+            grant(paths=("android-bridge/docs/",)),
+            executor,
+            reviewer,
+        )
+        self.assertEqual(result.state, TaskState.ACCEPTED)
+        self.assertEqual(executor.received_manifest.allowed_paths, ("android-bridge/docs/",))
+        self.assertEqual(reviewer.received_manifest.allowed_paths, ("android-bridge/docs/",))
+
+    def test_executor_cannot_use_manifest_scope_beyond_effective_grant(self):
+        executor = FakeExecutor(
+            ExecutionReport(
+                ("android-bridge/tests/test_outside_grant.py",),
+                "patch",
+                ("evidence",),
+            )
+        )
+        reviewer = FakeReviewer()
+        result = run_task(
+            manifest(),
+            grant(paths=("android-bridge/docs/",)),
+            executor,
+            reviewer,
+        )
+        self.assertEqual(result.state, TaskState.BLOCKED)
+        self.assertEqual(result.error_code, "OUT_OF_SCOPE_CHANGE")
+        self.assertEqual(reviewer.calls, 0)
 
 if __name__ == "__main__":
     unittest.main()
