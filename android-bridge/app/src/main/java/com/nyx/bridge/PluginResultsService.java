@@ -126,9 +126,23 @@ public final class PluginResultsService extends IntentService {
         }
         JSONObject oldData = previous.optJSONObject("data");
         JSONObject newData = next.optJSONObject("data");
-        if (oldData == null || newData == null) {
-            return next;
+        JSONObject oldArgs = previous.optJSONObject("args");
+        JSONObject nextArgs = next.optJSONObject("args");
+        if (oldData == null || newData == null || oldArgs == null || nextArgs == null) {
+            return withPaginationError(previous,
+                    "No se pudo validar la carpeta del siguiente bloque. Vuelve a listar.");
         }
+
+        String currentPath = oldArgs.optString("path", "");
+        String expectedPath = nextArgs.optString("expected_path", "");
+        String currentCursor = oldData.optString("cursor", "");
+        String requestedCursor = nextArgs.optString("cursor", "");
+        if (!currentPath.equals(expectedPath) || currentCursor.isEmpty()
+                || !currentCursor.equals(requestedCursor)) {
+            return withPaginationError(previous,
+                    "La carpeta o el cursor cambió mientras se cargaba. Vuelve a listar la carpeta.");
+        }
+
         JSONArray oldEntries = oldData.optJSONArray("entries");
         JSONArray newEntries = newData.optJSONArray("entries");
         JSONArray merged = new JSONArray();
@@ -153,14 +167,22 @@ public final class PluginResultsService extends IntentService {
             JSONObject combined = new JSONObject(next.toString());
             combined.put("data", newData);
             combined.put("action", "list");
-            JSONObject oldArgs = previous.optJSONObject("args");
-            if (oldArgs != null && oldArgs.has("path")) {
-                combined.put("args", oldArgs);
-            }
+            combined.put("args", oldArgs);
             combined.remove("pagination_error");
             return combined;
         } catch (JSONException error) {
-            return next;
+            return withPaginationError(previous,
+                    "No se pudo combinar la página de Dropbox. Vuelve a listar la carpeta.");
+        }
+    }
+
+    private JSONObject withPaginationError(JSONObject source, String message) {
+        try {
+            JSONObject result = new JSONObject(source.toString());
+            result.put("pagination_error", message);
+            return result;
+        } catch (JSONException error) {
+            return source;
         }
     }
 
