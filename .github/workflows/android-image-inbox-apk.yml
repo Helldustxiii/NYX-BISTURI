@@ -3,6 +3,7 @@ name: Build NYX Android APK
 on:
   push:
     branches:
+      - main
       - feature/android-image-inbox-2026-11-07
       - feature/nyx-android-full-app-2026-11-08
     paths:
