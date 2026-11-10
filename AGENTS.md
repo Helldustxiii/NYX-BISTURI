@@ -661,10 +661,6 @@ Nunca invertir este orden únicamente para terminar antes. La evidencia sigue go
 
 # 25. Regla de continuidad
 
----
-
-# 25. Regla de continuidad
-
 El agente debe poder continuar el trabajo sin depender exclusivamente del historial inmediato del chat.
 
 Para ello debe reconstruir el estado mediante:
