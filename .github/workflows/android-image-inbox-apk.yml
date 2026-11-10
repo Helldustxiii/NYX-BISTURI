@@ -1,14 +1,16 @@
-name: Build NYX Android Bridge APK
+name: Build NYX Android APK
 
 on:
   push:
     branches:
       - feature/android-image-inbox-2026-11-07
+      - feature/nyx-android-full-app-2026-11-08
     paths:
       - "android-bridge/**"
       - ".github/workflows/android-image-inbox-apk.yml"
   pull_request:
     branches:
+      - main
       - integrate/android-bridge-2026-09-27
     paths:
       - "android-bridge/**"
@@ -49,6 +51,9 @@ jobs:
         working-directory: android-bridge
         run: ./gradlew --no-daemon :app:testDebugUnitTest
 
+      - name: Run NYX chat CLI unit tests
+        run: python -m unittest discover -s android-bridge/tests -v
+
       - name: Restore original NYX debug signing key
         if: github.event_name != 'pull_request'
         env:
@@ -84,7 +89,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: nyx-bridge-image-inbox-debug
+          name: nyx-android-debug
           path: android-bridge/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14

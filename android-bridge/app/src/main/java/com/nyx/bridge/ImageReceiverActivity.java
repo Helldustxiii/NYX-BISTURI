@@ -36,7 +36,7 @@ public final class ImageReceiverActivity extends Activity {
         statusView = new TextView(this);
         statusView.setTextSize(17);
         statusView.setPadding(32, 32, 32, 32);
-        statusView.setText("NYX Bridge\n\nRecibiendo imagen…");
+        statusView.setText("NYX\n\nRecibiendo imagen…");
 
         ScrollView scrollView = new ScrollView(this);
         scrollView.addView(statusView);
@@ -79,7 +79,7 @@ public final class ImageReceiverActivity extends Activity {
         String action = intent.getAction();
         if (!Intent.ACTION_SEND.equals(action)
                 && !Intent.ACTION_SEND_MULTIPLE.equals(action)) {
-            showStatus("Acción no compatible. Comparte una imagen con NYX Bridge.");
+            showStatus("Acción no compatible. Comparte una imagen con NYX.");
             return;
         }
 
@@ -95,12 +95,12 @@ public final class ImageReceiverActivity extends Activity {
         }
 
         importStarted = true;
-        showStatus("NYX Bridge\n\nValidando y guardando "
+        showStatus("NYX\n\nValidando y guardando "
                 + sources.size() + " imagen(es)…");
 
         Context applicationContext = getApplicationContext();
         IMPORT_EXECUTOR.execute(() -> {
-            StringBuilder report = new StringBuilder("NYX Bridge\n\n");
+            StringBuilder report = new StringBuilder("NYX\n\n");
             int imported = 0;
 
             for (Uri source : sources) {
