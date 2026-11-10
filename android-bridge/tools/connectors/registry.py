@@ -17,9 +17,9 @@ CONNECTORS = {
         "actions": ("search", "read", "write", "issues", "pull_requests"),
     },
     "dropbox": {
-        "transport": "mcp",
-        "status": "available_via_chatgpt",
-        "actions": ("search", "read", "copy", "move", "upload", "download"),
+        "transport": "local",
+        "status": "setup_required",
+        "actions": ("status", "list", "download"),
     },
     "notion": {
         "transport": "mcp",
