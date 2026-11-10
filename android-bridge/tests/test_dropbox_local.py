@@ -110,6 +110,41 @@ class DropboxLocalTests(unittest.TestCase):
         self.assertFalse(result["has_more"])
         self.assertEqual(result["cursor"], "cursor-after-page-two")
 
+    def test_status_verifies_live_read_access_with_existing_scopes(self):
+        config = {
+            "app_key": "public-app-key",
+            "refresh_token": "refresh-secret",
+            "access_token": "cached-access-token",
+            "expires_at": 123456789,
+            "scope": "files.metadata.read files.content.read",
+        }
+        with patch.object(dropbox, "_rpc", return_value={"entries": []}) as rpc, \
+             patch.object(dropbox, "_load_config", return_value=config):
+            result = json.loads(dropbox.call("status"))
+
+        rpc.assert_called_once_with(
+            "files/list_folder",
+            {
+                "path": "",
+                "recursive": False,
+                "include_deleted": False,
+                "limit": 1,
+            },
+        )
+        self.assertTrue(result["authorized"])
+        self.assertTrue(result["api_verified"])
+        self.assertEqual(result["scope"], "files.metadata.read files.content.read")
+        self.assertNotIn("refresh_token", result)
+        self.assertNotIn("access_token", result)
+        self.assertNotIn("app_key", result)
+
+    def test_status_fails_when_dropbox_rejects_the_token(self):
+        with patch.object(
+            dropbox, "_rpc", side_effect=RuntimeError("dropbox_http_401:expired_access_token")
+        ):
+            with self.assertRaisesRegex(RuntimeError, "dropbox_http_401"):
+                dropbox.call("status")
+
     def test_image_signatures(self):
         self.assertTrue(dropbox._image_signature(b"\x89PNG\r\n\x1a\nrest"))
         self.assertTrue(dropbox._image_signature(b"\xff\xd8\xffrest"))
