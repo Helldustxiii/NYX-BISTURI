@@ -154,7 +154,7 @@ python -m unittest discover -s android-bridge/tests -v
 Se ha añadido un conector Dropbox de solo lectura en `tools/connectors/dropbox_local.py` y un asistente CLI en `tools/nyx-dropbox`.
 
 - OAuth 2.0 Authorization Code + PKCE; no usa App Secret.
-- Scopes mínimos de lectura: metadatos, contenido y cuenta.
+- Scopes mínimos de lectura: metadatos y contenido.
 - Refresh token en `~/.config/nyx/dropbox.json` (directorio 0700, archivo 0600).
 - Acciones 770: `status`, `list`, `download`.
 - Descargas de imágenes PNG/JPEG/WebP, máximo 20 MiB, a `~/NYX/Dropbox-Inbox/`.
