@@ -1,0 +1,41 @@
+#!/data/data/com.termux/files/usr/bin/python
+"""NYX Dropbox setup helper."""
+import argparse
+import os
+import sys
+from pathlib import Path
+
+TOOLS = Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOLS))
+
+from connectors.dropbox_local import authorize, call  # noqa: E402
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Dropbox de solo lectura para NYX")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("auth", help="autorizar Dropbox mediante OAuth PKCE")
+    sub.add_parser("status", help="mostrar estado sin revelar credenciales")
+    listing = sub.add_parser("list", help="listar una carpeta de Dropbox")
+    listing.add_argument("--path", default="", help="ruta Dropbox, por ejemplo /Nyx Ia")
+    listing.add_argument("--cursor", default=None, help="cursor de paginación")
+    download = sub.add_parser("download", help="descargar una imagen al inbox local")
+    download.add_argument("path", help="ruta absoluta de la imagen en Dropbox")
+    args = parser.parse_args()
+    try:
+        if args.command == "auth":
+            print(authorize())
+        elif args.command == "status":
+            print(call("status"))
+        elif args.command == "list":
+            print(call("list", {"path": args.path, "cursor": args.cursor}))
+        elif args.command == "download":
+            print(call("download", {"path": args.path}))
+        return 0
+    except (RuntimeError, ValueError, OSError) as error:
+        print(f"NYX Dropbox: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
