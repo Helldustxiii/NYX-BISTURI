@@ -121,7 +121,11 @@ def validate_patch_paths(
     validate_changed_paths(manifest, changed_paths)
     if not isinstance(patch, str) or not patch.strip():
         raise PolicyViolation("EMPTY_EXECUTION_REPORT")
-    if len(patch.encode("utf-8")) > MAX_PATCH_BYTES:
+    try:
+        patch_size = len(patch.encode("utf-8"))
+    except UnicodeEncodeError:
+        raise PolicyViolation("INVALID_PATCH") from None
+    if patch_size > MAX_PATCH_BYTES:
         raise PolicyViolation("PATCH_TOO_LARGE")
 
     diff_paths: list[str] = []
