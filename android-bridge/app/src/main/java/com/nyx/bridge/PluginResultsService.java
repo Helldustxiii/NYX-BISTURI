@@ -60,7 +60,20 @@ public final class PluginResultsService extends IntentService {
         boolean commandOk = exitCode == 0 && payload != null
                 && payload.optBoolean("ok", false);
 
-        if ("status".equals(mode)) {
+        if (mode != null && mode.startsWith("dropbox")) {
+            if (commandOk) {
+                ChatMessageStore.saveDropboxResult(this, payload.toString());
+            } else {
+                JSONObject failed = new JSONObject();
+                try {
+                    failed.put("ok", false);
+                    failed.put("kind", "dropbox");
+                    failed.put("error", errorText(payload, stderr, internalError, exitCode));
+                } catch (JSONException ignored) {
+                }
+                ChatMessageStore.saveDropboxResult(this, failed.toString());
+            }
+        } else if ("status".equals(mode)) {
             if (commandOk) {
                 ChatMessageStore.saveStatus(this, payload.toString());
             } else {
@@ -126,7 +139,16 @@ public final class PluginResultsService extends IntentService {
     }
 
     private void storeFailure(String resultId, String mode, String message) {
-        if ("status".equals(mode)) {
+        if (mode != null && mode.startsWith("dropbox")) {
+            JSONObject failed = new JSONObject();
+            try {
+                failed.put("ok", false);
+                failed.put("kind", "dropbox");
+                failed.put("error", message);
+            } catch (JSONException ignored) {
+            }
+            ChatMessageStore.saveDropboxResult(this, failed.toString());
+        } else if ("status".equals(mode)) {
             JSONObject failed = new JSONObject();
             try {
                 failed.put("ok", false);

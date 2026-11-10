@@ -12,6 +12,7 @@ final class ChatMessageStore {
     private static final String PREFS = "nyx_chat_store";
     private static final String KEY_MESSAGES = "messages";
     private static final String KEY_STATUS = "system_status";
+    private static final String KEY_DROPBOX_RESULT = "dropbox_result";
 
     private ChatMessageStore() {
     }
@@ -86,6 +87,19 @@ final class ChatMessageStore {
 
     static synchronized JSONObject getStatus(Context context) {
         String raw = prefs(context).getString(KEY_STATUS, "{}");
+        try {
+            return new JSONObject(raw == null ? "{}" : raw);
+        } catch (JSONException error) {
+            return new JSONObject();
+        }
+    }
+
+    static synchronized void saveDropboxResult(Context context, String json) {
+        prefs(context).edit().putString(KEY_DROPBOX_RESULT, json).apply();
+    }
+
+    static synchronized JSONObject getDropboxResult(Context context) {
+        String raw = prefs(context).getString(KEY_DROPBOX_RESULT, "{}");
         try {
             return new JSONObject(raw == null ? "{}" : raw);
         } catch (JSONException error) {

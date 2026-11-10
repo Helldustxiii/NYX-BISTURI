@@ -102,3 +102,19 @@ Las imágenes descargadas se guardan en `~/NYX/Dropbox-Inbox/`, con límite de 2
 La conexión requiere autorización interactiva inicial. Las llamadas posteriores renuevan el access token con el refresh token. El conector no registra ni devuelve tokens. El almacenamiento local está protegido por permisos Unix, pero no cifrado con Android Keystore; el acceso al UID de Termux o un dispositivo comprometido podría leerlo.
 
 **Límite:** Dropbox puede entregar la imagen a Termux. Esto no declara que Qwen actual sea multimodal ni que el modelo haya procesado la imagen. La integración de visión es una fase separada y requiere comprobar el modelo, el proyector visual y la versión de llama.cpp del teléfono.
+
+
+## Dropbox desde NYX Android
+
+La pestaña Dropbox de la aplicación llama a un conjunto cerrado de argumentos del script `nyx-chat`; no envía texto de usuario a un shell ni permite seleccionar ejecutables arbitrarios.
+
+Interfaz CLI fija:
+- `nyx-chat --dropbox-status`
+- `nyx-chat --dropbox-list "/Nyx Ia"`
+- `nyx-chat --dropbox-download "/Nyx Ia/imagen.png"`
+
+El helper devuelve JSON con `ok`, `kind`, `action` y `data` o `error`. La app recibe el resultado mediante el PendingIntent de Termux y lo guarda en preferencias privadas para actualizar la pestaña.
+
+La autorización inicial permanece manual en Termux: hay que configurar `NYX_DROPBOX_APP_KEY` y ejecutar `nyx-dropbox auth`. No se incorpora un formulario de tokens en Android. La app solo lista, abre carpetas y descarga imágenes PNG/JPEG/WebP. La respuesta de descarga indica la ruta local en `~/NYX/Dropbox-Inbox/`; no afirma que Qwen haya procesado la imagen.
+
+El listado de esta primera versión limita la consulta a los primeros 100 elementos por carpeta; la paginación se reserva para una mejora posterior.
