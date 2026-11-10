@@ -35,6 +35,14 @@
 
 ---
 
+## Approaches Considered
+
+1. **Integrate Copilot SDK immediately.** This would exercise real agent sessions sooner, but it couples the first proof to provider authentication, runtime installation, usage/cost, and a host decision. Current SDK documentation lists Python support, but it does not establish that the bundled runtime is supported in Android/Termux. This is too many unresolved variables for the first safety proof.
+2. **Build a provider-neutral offline contract first, then add a Copilot adapter.** This tests manifests, authorization, scope enforcement, execution/review separation, and audit outcomes without provider access or new dependencies. Its limitation is explicit: fake adapters cannot demonstrate real model quality, process isolation, or a live agent session. **Recommended for Phase B1.**
+3. **Build a custom relay/orchestrator before testing the contract.** This could eventually provide more control, but it introduces network services, authentication, deployment, and a new attack surface before we know the task contract is sound. It is premature.
+
+**Proposed choice:** approach 2 for this branch only. It does not commit the project to Termux, CI, or a server as the future host, and it does not pre-approve Copilot authentication or provider usage.
+
 ## File Structure
 
 Create:
