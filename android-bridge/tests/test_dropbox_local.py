@@ -89,8 +89,8 @@ class DropboxLocalTests(unittest.TestCase):
                     dropbox._load_config()
 
     def test_image_signatures(self):
-        self.assertTrue(dropbox._image_signature(b"\\x89PNG\\r\\n\\x1a\\nrest"))
-        self.assertTrue(dropbox._image_signature(b"\\xff\\xd8\\xffrest"))
+        self.assertTrue(dropbox._image_signature(b"\x89PNG\r\n\x1a\nrest"))
+        self.assertTrue(dropbox._image_signature(b"\xff\xd8\xffrest"))
         self.assertTrue(dropbox._image_signature(b"RIFFxxxxWEBPrest"))
         self.assertFalse(dropbox._image_signature(b"not an image"))
 
