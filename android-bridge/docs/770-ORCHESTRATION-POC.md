@@ -45,7 +45,7 @@ python -m unittest discover -s android-bridge/tests -v
 
 Before adding a real Copilot adapter, explicitly decide:
 
-- **Host:** desktop, controlled server, or CI. Python SDK support alone does not establish compatibility with Android/Termux or its bundled runtime.
+- **Host:** desktop, controlled server, or CI. Python SDK support alone does not establish compatibility with Android/Termux or its bundled runtime. The official Python SDK README currently lists Linux, macOS, and Windows runtime cache paths, but no Android platform entry; therefore Android/Termux support must not be assumed ([official Python SDK README](https://github.com/github/copilot-sdk/blob/main/python/README.md#runtime)).
 - **Runtime installation:** whether to install and run the Copilot SDK and its CLI/runtime components.
 - **Authentication and cost:** whether to authenticate with the GitHub/Copilot account and accept any applicable plan limits or usage charges.
 - **Tool boundary:** the exact workspace, read/write paths, network policy, and reviewer independence.
