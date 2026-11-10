@@ -71,7 +71,7 @@ Dropbox se ejecuta ahora como conector local de Termux, no como MCP. La primera 
 
 ### Preparación única
 
-1. Crea una aplicación Dropbox con acceso **Full Dropbox** y habilita únicamente estos scopes: `files.metadata.read`, `files.content.read` y `account_info.read`.
+1. Crea una aplicación Dropbox con acceso **Full Dropbox** y habilita únicamente estos scopes: `files.metadata.read` y `files.content.read`.
 2. En Termux, define la App Key (no se necesita App Secret):
 
 ```sh
