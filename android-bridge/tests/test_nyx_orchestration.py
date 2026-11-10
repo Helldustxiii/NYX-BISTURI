@@ -243,7 +243,7 @@ class ControllerTests(unittest.TestCase):
         reports = (
             ExecutionReport((), "patch", ("evidence",)),
             ExecutionReport(("android-bridge/docs/a.md",), " ", ("evidence",)),
-            ExecutionReport(("android-bridge/docs/a.md",), "patch", ()),
+            ExecutionReport(("android-bridge/docs/a.md",), "diff --git a/android-bridge/docs/a.md b/android-bridge/docs/a.md", ()),
         )
         for report in reports:
             reviewer = FakeReviewer()
