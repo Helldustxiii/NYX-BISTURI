@@ -163,3 +163,10 @@ Se ha añadido un conector Dropbox de solo lectura en `tools/connectors/dropbox_
 La App Key debe configurarse en Termux como `NYX_DROPBOX_APP_KEY` y la autorización debe completarse manualmente. El token no se incluye en el repositorio.
 
 La descarga local no implica todavía análisis visual: el soporte multimodal del modelo Qwen instalado debe verificarse por separado.
+
+
+### Visión local Qwen3.5
+
+Qwen3.5-4B puede analizar imágenes con llama.cpp, pero los pesos Q4_K_M necesitan el archivo visual `mmproj` correspondiente y una versión de llama.cpp que soporte la arquitectura `qwen35`. El proyector F16 ocupa aproximadamente 640–672 MB. No se descarga como parte de esta integración para no consumir almacenamiento del teléfono sin comprobar primero la versión de llama.cpp y el espacio libre.
+
+Referencias: https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md y https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF
