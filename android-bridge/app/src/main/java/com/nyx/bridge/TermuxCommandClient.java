@@ -62,6 +62,18 @@ final class TermuxCommandClient {
         execute(context, new String[]{"--status"}, "system-status", "status");
     }
 
+    static void requestDropboxStatus(Context context) {
+        execute(context, new String[]{"--dropbox-status"}, "dropbox-result", "dropbox-status");
+    }
+
+    static void requestDropboxList(Context context, String path) {
+        execute(context, new String[]{"--dropbox-list", path}, "dropbox-result", "dropbox-list");
+    }
+
+    static void requestDropboxDownload(Context context, String path) {
+        execute(context, new String[]{"--dropbox-download", path}, "dropbox-result", "dropbox-download");
+    }
+
     private static void execute(
             Context context,
             String[] arguments,
