@@ -6,11 +6,11 @@ This document describes the first provider-neutral orchestration contract for NY
 
 ## What is implemented
 
-The package lives in \`android-bridge/tools/nyx_orchestration/\` and uses only the Python standard library.
+The package lives in `android-bridge/tools/nyx_orchestration/` and uses only the Python standard library.
 
 - **Manifest:** identifies the task, objective, repository, base ref, and allowed roots.
 - **Grant:** binds authorization to one task ID and a subset of the manifest's roots.
-- **Policy:** permits only \`android-bridge/docs/\` and \`android-bridge/tests/\`; rejects traversal, absolute paths, Windows separators, protected paths, and scope expansion.
+- **Policy:** permits only `android-bridge/docs/` and `android-bridge/tests/`; rejects traversal, absolute paths, Windows separators, protected paths, and scope expansion.
 - **Executor protocol:** returns a declarative execution report. It has no shell, network, write, push, merge, or deploy method.
 - **Reviewer protocol:** receives the manifest and report separately and must return an explicit Boolean verdict.
 - **Controller:** moves through PLANNED → AUTHORIZED → EXECUTING → REVIEWING → ACCEPTED/REJECTED. Policy violations and adapter failures terminate in BLOCKED.
@@ -22,15 +22,15 @@ The controller never applies a patch. It validates both the executor's reported 
 
 From the repository root:
 
-\`\`\`bash
+```bash
 python -m unittest discover -s android-bridge/tests -p 'test_nyx_orchestration.py' -v
-\`\`\`
+```
 
 Run the full Android bridge Python regression suite:
 
-\`\`\`bash
+```bash
 python -m unittest discover -s android-bridge/tests -v
-\`\`\`
+```
 
 ## Explicit limitations
 
