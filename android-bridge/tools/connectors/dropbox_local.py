@@ -311,10 +311,22 @@ def call(action: str, args: dict[str, Any] | None = None) -> str:
     elif action == "download":
         result = download_image(str(args.get("path", "")))
     elif action == "status":
+        # Verify the stored/refreshable token against Dropbox itself using the
+        # already-authorized read-only metadata scope. Never return token data.
+        _rpc("files/list_folder", {
+            "path": "",
+            "recursive": False,
+            "include_deleted": False,
+            "limit": 1,
+        })
         config = _load_config()
-        result = {"credentials_present": True, "token_cached": bool(config.get("access_token")),
-                  "token_expires_at": config.get("expires_at"),
-                  "scope": config.get("scope", "")}
+        result = {
+            "authorized": True,
+            "api_verified": True,
+            "token_cached": bool(config.get("access_token")),
+            "token_expires_at": config.get("expires_at"),
+            "scope": config.get("scope", ""),
+        }
     else:
         raise ValueError("action_not_allowed")
     return json.dumps(result, ensure_ascii=False)

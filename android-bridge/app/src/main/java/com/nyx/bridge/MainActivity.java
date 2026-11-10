@@ -416,10 +416,16 @@ public class MainActivity extends Activity {
             String action = result.optString("action", "");
             JSONObject data = result.optJSONObject("data");
             if ("status".equals(action) && data != null) {
-                page.addView(infoCard("Autorización correcta",
-                        "Credenciales locales encontradas. Permisos: "
-                                + data.optString("scope", "no indicados")
-                                + ". El token se renueva en Termux cuando caduca."));
+                boolean apiVerified = data.optBoolean("api_verified", false);
+                page.addView(infoCard(
+                        apiVerified ? "Dropbox conectado" : "Credenciales locales encontradas",
+                        apiVerified
+                                ? "Dropbox ha aceptado el token y el permiso de lectura. Permisos: "
+                                        + data.optString("scope", "no indicados")
+                                        + ". El token se renueva en Termux cuando caduca."
+                                : "Se encontró el archivo de credenciales, pero no se ha verificado "
+                                        + "una respuesta válida de la API de Dropbox."
+                ));
             } else if ("download".equals(action) && data != null) {
                 page.addView(infoCard("Imagen descargada",
                         data.optString("name", "Archivo")
