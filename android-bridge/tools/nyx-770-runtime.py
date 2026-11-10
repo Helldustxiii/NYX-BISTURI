@@ -102,6 +102,7 @@ def process_message(
     protocol: Any,
     android_call: Callable[[str], str],
     get_connector: Callable[[str], dict[str, Any] | None],
+    dropbox_call: Callable[[str, dict[str, Any]], str] | None = None,
 ) -> None:
     """Route one protocol message without opening or consuming any FIFO."""
     packet = protocol.parse_message(message)
@@ -121,7 +122,7 @@ def process_message(
         if message_type == "ANDROID":
             _handle_android(packet, payload, protocol, android_call)
         else:
-            _handle_connector(packet, payload, protocol, android_call, get_connector)
+            _handle_connector(packet, payload, protocol, android_call, get_connector, dropbox_call)
     except Exception as error:  # convert handler failures into protocol replies
         _reply(protocol, packet, "ERROR", str(error), "FAIL")
 
