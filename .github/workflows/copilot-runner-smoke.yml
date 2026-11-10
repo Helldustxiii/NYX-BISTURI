@@ -1,0 +1,47 @@
+name: Copilot runner smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: copilot-runner-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  copilot-smoke:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned Copilot SDK
+        run: python -m pip install --disable-pip-version-check --no-input "github-copilot-sdk==1.0.29"
+
+      - name: Download and verify bundled Linux runtime
+        run: python -m copilot download-runtime
+
+      - name: Require explicit Copilot credential
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$COPILOT_GITHUB_TOKEN" ]; then
+            echo "::error::Add the COPILOT_GITHUB_TOKEN repository secret before running this workflow."
+            exit 1
+          fi
+
+      - name: Run no-tools Copilot connectivity check
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: python android-bridge/tools/nyx_copilot_runner_smoke.py
