@@ -92,28 +92,24 @@ class PolicyTests(unittest.TestCase):
 
     def test_patch_paths_must_match_the_declared_paths(self):
         item = manifest(allowed_paths=("android-bridge/docs/",))
-        patch = (
-            "diff --git a/android-bridge/docs/a.md b/android-bridge/docs/a.md\\n"
-            "--- a/android-bridge/docs/a.md\\n"
-            "+++ b/android-bridge/docs/a.md\\n"
-        )
+        patch = "diff --git a/android-bridge/docs/a.md b/android-bridge/docs/a.md"
         validate_patch_paths(item, ("android-bridge/docs/a.md",), patch)
 
     def test_patch_cannot_hide_an_out_of_scope_file(self):
         item = manifest(allowed_paths=("android-bridge/docs/",))
-        patch = "diff --git a/JARDIN/private.md b/JARDIN/private.md\\n"
+        patch = "diff --git a/JARDIN/private.md b/JARDIN/private.md"
         with self.assertRaisesRegex(PolicyViolation, "OUT_OF_SCOPE_CHANGE"):
             validate_patch_paths(item, ("android-bridge/docs/a.md",), patch)
 
     def test_patch_and_reported_paths_must_match(self):
         item = manifest(allowed_paths=("android-bridge/docs/",))
-        patch = "diff --git a/android-bridge/docs/other.md b/android-bridge/docs/other.md\\n"
+        patch = "diff --git a/android-bridge/docs/other.md b/android-bridge/docs/other.md"
         with self.assertRaisesRegex(PolicyViolation, "PATCH_PATH_MISMATCH"):
             validate_patch_paths(item, ("android-bridge/docs/a.md",), patch)
 
     def test_patch_renames_are_rejected(self):
         item = manifest(allowed_paths=("android-bridge/docs/",))
-        patch = "diff --git a/android-bridge/docs/old.md b/android-bridge/docs/new.md\\n"
+        patch = "diff --git a/android-bridge/docs/old.md b/android-bridge/docs/new.md"
         with self.assertRaisesRegex(PolicyViolation, "PATCH_RENAME_NOT_ALLOWED"):
             validate_patch_paths(item, ("android-bridge/docs/new.md",), patch)
 
@@ -126,7 +122,6 @@ class PolicyTests(unittest.TestCase):
                 item, ("android-bridge/docs/a.md",),
                 "x" * (1_048_576 + 1),
             )
-
 
 class FakeExecutor:
     def __init__(self, report=None, error=None):
@@ -240,10 +235,11 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(result.error_code, "REVIEWER_FAILED")
 
     def test_empty_execution_report_is_blocked_before_review(self):
+        valid_patch = "diff --git a/android-bridge/docs/a.md b/android-bridge/docs/a.md"
         reports = (
-            ExecutionReport((), "patch", ("evidence",)),
+            ExecutionReport((), "not a diff", ("evidence",)),
             ExecutionReport(("android-bridge/docs/a.md",), " ", ("evidence",)),
-            ExecutionReport(("android-bridge/docs/a.md",), "diff --git a/android-bridge/docs/a.md b/android-bridge/docs/a.md", ()),
+            ExecutionReport(("android-bridge/docs/a.md",), valid_patch, ()),
         )
         for report in reports:
             reviewer = FakeReviewer()
