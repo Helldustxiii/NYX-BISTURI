@@ -138,6 +138,6 @@ python android-bridge/tools/nyx-dropbox status
 python android-bridge/tools/nyx-dropbox list --path "/Nyx Ia"
 ~~~
 
-La App Key es un identificador público de la aplicación. No guardes el refresh token en el repositorio ni lo compartas. La autorización inicial se completa manualmente en el navegador y pegando el código de Dropbox en Termux.
+La App Key es un identificador público de la aplicación. En la consola de Dropbox, habilita **Allow public clients** en OAuth 2 para permitir PKCE. No hace falta registrar un Redirect URI: al omitirlo, Dropbox muestra el código para copiarlo en Termux. La autorización inicial se completa manualmente en el navegador y pegando el código de Dropbox en Termux. No guardes el refresh token en el repositorio ni lo compartas.
 
 La descarga de una imagen no implica que Qwen la haya analizado. La entrada visual requiere verificar por separado el modelo, el proyector multimodal y la versión de llama.cpp instalada en el dispositivo.
