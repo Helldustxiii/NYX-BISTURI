@@ -447,7 +447,12 @@ public class MainActivity extends Activity {
                     LinearLayout.LayoutParams moreParams = fullWidthButton();
                     moreParams.topMargin = dp(9);
                     page.addView(more, moreParams);
-                    more.setOnClickListener(view -> requestDropboxMore(nextCursor));
+                    more.setOnClickListener(view -> {
+                        if (requestDropboxMore(nextCursor)) {
+                            more.setEnabled(false);
+                            more.setText("Cargando…");
+                        }
+                    });
                 }
                 String pageError = result.optString("pagination_error", "");
                 if (!pageError.isEmpty()) {
@@ -541,22 +546,24 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void requestDropboxMore(String cursor) {
+    private boolean requestDropboxMore(String cursor) {
         if (!ensureTermuxReady()) {
-            return;
+            return false;
         }
         if (cursor == null || cursor.isEmpty()) {
             Toast.makeText(this, "Dropbox no devolvió un cursor de paginación.",
                     Toast.LENGTH_LONG).show();
-            return;
+            return false;
         }
         try {
             TermuxCommandClient.requestDropboxMore(this, cursor, dropboxPath);
             Toast.makeText(this, "Cargando los siguientes 100 elementos…",
                     Toast.LENGTH_SHORT).show();
+            return true;
         } catch (Exception error) {
             Toast.makeText(this, "No se pudo continuar el listado: " + error.getMessage(),
                     Toast.LENGTH_LONG).show();
+            return false;
         }
     }
 
