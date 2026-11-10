@@ -551,7 +551,7 @@ public class MainActivity extends Activity {
             return;
         }
         try {
-            TermuxCommandClient.requestDropboxMore(this, cursor);
+            TermuxCommandClient.requestDropboxMore(this, cursor, dropboxPath);
             Toast.makeText(this, "Cargando los siguientes 100 elementos…",
                     Toast.LENGTH_SHORT).show();
         } catch (Exception error) {
