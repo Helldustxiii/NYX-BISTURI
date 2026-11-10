@@ -60,6 +60,8 @@ def validate_manifest(manifest: TaskManifest) -> None:
         raise PolicyViolation("INVALID_SCOPE")
     if any(root not in ALLOWED_ROOTS for root in manifest.allowed_paths):
         raise PolicyViolation("INVALID_SCOPE")
+    if any(not isinstance(root, str) for root in manifest.allowed_paths):
+        raise PolicyViolation("INVALID_SCOPE")
     if len(set(manifest.allowed_paths)) != len(manifest.allowed_paths):
         raise PolicyViolation("INVALID_SCOPE")
     permissions = manifest.permissions
@@ -80,6 +82,8 @@ def validate_grant(manifest: TaskManifest, grant: ExecutionGrant) -> None:
         raise PolicyViolation("INVALID_GRANT")
     if not isinstance(grant.allowed_paths, tuple) or not grant.allowed_paths:
         raise PolicyViolation("INVALID_GRANT")
+    if any(not isinstance(root, str) for root in grant.allowed_paths):
+        raise PolicyViolation("INVALID_GRANT")
     if len(set(grant.allowed_paths)) != len(grant.allowed_paths):
         raise PolicyViolation("INVALID_GRANT")
     if any(root not in manifest.allowed_paths for root in grant.allowed_paths):
@@ -92,6 +96,8 @@ def validate_changed_paths(
     validate_manifest(manifest)
     if not isinstance(changed_paths, tuple) or not changed_paths:
         raise PolicyViolation("EMPTY_EXECUTION_REPORT")
+    if any(not isinstance(path, str) for path in changed_paths):
+        raise PolicyViolation("INVALID_PATH")
     if len(set(changed_paths)) != len(changed_paths):
         raise PolicyViolation("INVALID_PATH")
     if any(not is_path_allowed(path, manifest.allowed_paths) for path in changed_paths):
