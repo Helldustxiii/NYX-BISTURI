@@ -54,6 +54,7 @@ def _handle_connector(
     protocol: Any,
     android_call: Callable[[str], str],
     get_connector: Callable[[str], dict[str, Any] | None],
+    dropbox_call: Callable[[str, dict[str, Any]], str] | None = None,
 ) -> None:
     service = request.get("service", "")
     action = request.get("action", "")
@@ -87,6 +88,10 @@ def _handle_connector(
 
     if service == "android":
         _reply(protocol, packet, "RESULT", android_call(action))
+        return
+
+    if service == "dropbox" and dropbox_call is not None:
+        _reply(protocol, packet, "RESULT", dropbox_call(action, args))
         return
 
     raise ValueError("local_connector_not_implemented")
@@ -152,6 +157,7 @@ def main() -> int:
     try:
         import protocol770
         from connectors.android import call as android_call
+        from connectors.dropbox_local import call as dropbox_call
         from connectors.registry import get_connector, list_connectors
     except ImportError as error:
         print(f"No se pueden cargar las dependencias de NYX 770: {error}", file=sys.stderr)
@@ -181,7 +187,7 @@ def main() -> int:
             with channel.open("r", encoding="utf-8") as input_channel:
                 for message in input_channel:
                     if message.strip():
-                        process_message(message, protocol770, android_call, get_connector)
+                        process_message(message, protocol770, android_call, get_connector, dropbox_call)
     except KeyboardInterrupt:
         print("NYX 770 runtime detenido por el usuario.", flush=True)
         return 0
