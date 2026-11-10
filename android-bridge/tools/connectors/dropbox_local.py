@@ -271,14 +271,23 @@ def download_image(path: str) -> dict[str, Any]:
         raise RuntimeError(f"dropbox_download_network_error:{type(error).__name__}") from None
     if len(data) > MAX_IMAGE_BYTES:
         raise ValueError("image_exceeds_20_mb_limit")
-    if not _image_signature(data):
+    detected_mime = _image_mime(data)
+    if detected_mime is None:
         raise ValueError("downloaded_file_is_not_a_supported_image")
+    expected_mime = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }[suffix]
+    if detected_mime != expected_mime:
+        raise ValueError("image_extension_does_not_match_file_signature")
     inbox = Path.home() / "NYX" / "Dropbox-Inbox"
     inbox.mkdir(parents=True, exist_ok=True, mode=0o700)
     safe_name = Path(remote_path).name.replace("/", "_").replace("\\", "_")
     target = inbox / safe_name
     if target.exists():
-        target = inbox / f"{target.stem}-{int(time.time())}{target.suffix}"
+        target = inbox / f"{target.stem}-{int(time.time())}-{secrets.token_hex(3)}{target.suffix}"
     temp = target.with_suffix(target.suffix + ".tmp")
     fd = os.open(str(temp), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     try:
@@ -292,10 +301,7 @@ def download_image(path: str) -> dict[str, Any]:
         except FileNotFoundError:
             pass
     return {"downloaded": True, "name": target.name, "path": str(target),
-            "bytes": len(data), "mime": {
-                ".png": "image/png", ".jpg": "image/jpeg",
-                ".jpeg": "image/jpeg", ".webp": "image/webp"
-            }[suffix]}
+            "bytes": len(data), "mime": detected_mime}
 
 
 def call(action: str, args: dict[str, Any] | None = None) -> str:
