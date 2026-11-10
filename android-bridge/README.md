@@ -117,3 +117,27 @@ La CI compila y publica el APK como artefacto del workflow. La instalación y la
 ## Regla de integración
 
 Cada enlace debe tener una interfaz observable y una prueba reproducible. La app no se considera completamente validada hasta que el APK se instale en el dispositivo real y una conversación llegue desde Android a Qwen y regrese.
+
+
+## Dropbox local para NYX-BISTURÍ
+
+El conector Dropbox se ejecuta localmente en Termux mediante OAuth 2.0 Authorization Code + PKCE. No utiliza App Secret.
+
+- Scopes solicitados: `files.metadata.read` y `files.content.read`.
+- Acciones permitidas: `status`, `list` y `download` de imágenes.
+- No hay operaciones de escritura, borrado, movimiento ni compartición.
+- El refresh token se guarda en `~/.config/nyx/dropbox.json` con permisos 0600; el directorio usa 0700.
+- Las descargas admiten PNG/JPEG/WebP hasta 20 MiB y se guardan en `~/NYX/Dropbox-Inbox/`.
+
+Desde la raíz del repositorio en Termux:
+
+~~~sh
+export NYX_DROPBOX_APP_KEY="APP_KEY_DE_DROPBOX"
+python android-bridge/tools/nyx-dropbox auth
+python android-bridge/tools/nyx-dropbox status
+python android-bridge/tools/nyx-dropbox list --path "/Nyx Ia"
+~~~
+
+La App Key es un identificador público de la aplicación. No guardes el refresh token en el repositorio ni lo compartas. La autorización inicial se completa manualmente en el navegador y pegando el código de Dropbox en Termux.
+
+La descarga de una imagen no implica que Qwen la haya analizado. La entrada visual requiere verificar por separado el modelo, el proyector multimodal y la versión de llama.cpp instalada en el dispositivo.
