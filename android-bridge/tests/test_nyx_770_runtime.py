@@ -58,6 +58,7 @@ class RuntimeRoutingTests(unittest.TestCase):
         self.connectors = {
             "android": {"transport": "local", "status": "active", "actions": ("ping", "device_info")},
             "github": {"transport": "mcp", "status": "available_via_chatgpt", "actions": ("search", "read")},
+            "dropbox": {"transport": "local", "status": "setup_required", "actions": ("status", "list", "download")},
         }
         self.get_connector = self.connectors.get
 
