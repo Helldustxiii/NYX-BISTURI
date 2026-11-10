@@ -101,3 +101,14 @@ Las imágenes descargadas se guardan en `~/NYX/Dropbox-Inbox/`, con límite de 2
 La conexión requiere autorización interactiva inicial. Las llamadas posteriores renuevan el access token con el refresh token. El conector no registra ni devuelve tokens. El almacenamiento local de credenciales está protegido por permisos Unix, pero no cifrado con Android Keystore; el acceso al UID de Termux o un dispositivo comprometido podría leerlo.
 
 **Alcance deliberado:** Dropbox puede entregar la imagen a Termux. Esto no declara que Qwen actual sea multimodal ni que el modelo haya procesado la imagen. La integración de visión es una fase separada y debe probarse con un modelo y un proyector multimodal compatibles.
+
+
+### Visión local: requisito pendiente
+
+La familia Qwen3.5-4B dispone de entrada visual en GGUF, pero el archivo de pesos Q4_K_M por sí solo no basta: necesita el proyector visual `mmproj` correspondiente y una compilación de llama.cpp compatible con `qwen35`. llama.cpp documenta la carga con `--mmproj` y el uso de `llama-server` mediante su API OpenAI-compatible `/chat/completions`.
+
+El proyector F16 publicado para esta familia ronda los 640–672 MB, según la conversión. No se descarga automáticamente: antes hay que comprobar la versión de `llama-server`, el nombre exacto del GGUF instalado y el espacio disponible en el teléfono. Una vez cargado, el flujo previsto es Dropbox → archivo local → llama-server con imagen → respuesta de NYX.
+
+Referencias:
+- https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md
+- https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF
