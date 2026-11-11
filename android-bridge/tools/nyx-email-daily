@@ -154,7 +154,7 @@ def validate_local_base_url(value: Any) -> str:
     parsed = urllib.parse.urlsplit(value)
     if (
         parsed.scheme != "http"
-        or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
+        or parsed.hostname != "127.0.0.1"
         or parsed.username is not None
         or parsed.password is not None
         or parsed.query
@@ -210,6 +210,16 @@ def read_profile(path: Path) -> str:
     return content
 
 
+class LoopbackRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Never allow local Qwen requests to follow a redirect off-device."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        parsed = urllib.parse.urlsplit(newurl)
+        if parsed.scheme != "http" or parsed.hostname != "127.0.0.1":
+            raise EmailJobError("qwen_redirect_not_local")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def http_json(url: str, payload: dict[str, Any] | None = None, timeout: float = 5.0) -> dict[str, Any]:
     headers = {"Accept": "application/json"}
     data = None
@@ -219,8 +229,11 @@ def http_json(url: str, payload: dict[str, Any] | None = None, timeout: float = 
         headers["Content-Type"] = "application/json"
         method = "POST"
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), LoopbackRedirectHandler()
+    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with opener.open(request, timeout=timeout) as response:
             raw = response.read(1_000_000).decode("utf-8")
     except (OSError, urllib.error.URLError, urllib.error.HTTPError, UnicodeError):
         raise EmailJobError("qwen_local_api_unavailable") from None
