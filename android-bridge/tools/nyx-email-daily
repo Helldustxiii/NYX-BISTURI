@@ -279,8 +279,9 @@ def parse_draft(raw: str, date: dt.date) -> tuple[str, str]:
     return subject, body
 
 
-def fingerprint(subject: str, body: str) -> str:
-    return hashlib.sha256((subject + "\n" + body).encode("utf-8")).hexdigest()
+def fingerprint(_subject: str, body: str) -> str:
+    """Fingerprint content only, so a new date cannot hide an exact duplicate."""
+    return hashlib.sha256(body.strip().encode("utf-8")).hexdigest()
 
 
 def load_state(path: Path) -> dict[str, Any]:
