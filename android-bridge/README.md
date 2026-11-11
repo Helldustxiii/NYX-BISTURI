@@ -163,3 +163,10 @@ Después, desde la pestaña Dropbox:
 - Descargar imágenes PNG/JPEG/WebP hasta 20 MiB a `~/NYX/Dropbox-Inbox/`.
 
 El listado muestra 100 elementos por página. Cuando Dropbox devuelve un cursor, la pestaña permite cargar los siguientes 100 sin perder los resultados anteriores. No hay subida, borrado, movimiento ni compartición. La descarga local todavía no implica análisis visual por Qwen.
+
+
+## Correo diario local de NYX
+
+La redacción se puede ejecutar localmente con Qwen mediante `nyx-email-daily`. El proceso no consume las FIFO del Runtime 770 ni necesita depuración ADB. Las instrucciones de privacidad, configuración, pruebas y envío manual están en [EMAIL-PRIVADO-LOCAL.md](docs/EMAIL-PRIVADO-LOCAL.md).
+
+Este componente no queda programado ni envía correos durante la instalación. La sustitución de la automatización alojada requiere primero comprobar Qwen en el dispositivo, revisar un borrador y validar un envío manual. Gmail SMTP recibe el correo en claro: el envío local elimina OpenAI/ChatGPT de la generación, pero no oculta el contenido a Google.
