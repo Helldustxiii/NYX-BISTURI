@@ -12,7 +12,7 @@ El script es independiente del lector único del protocolo 770 y no consume las 
 
 - La URL de Qwen queda fijada a `http://127.0.0.1:8080/v1`. El cliente desactiva proxies del entorno, rechaza endpoints remotos y bloquea redirecciones fuera de `127.0.0.1`. llama.cpp usa `127.0.0.1` como host predeterminado; no lo cambies a `0.0.0.0` y comprueba que `LLAMA_ARG_HOST` no lo sobrescriba.
 - El perfil, la configuración y la contraseña de aplicación viven en el directorio privado de Termux, nunca en GitHub.
-- Los archivos privados se crean con permisos `0700` para directorios y `0600` para archivos; el script rechaza ficheros de configuración, perfil o secreto demasiado abiertos.
+- Los archivos privados se crean con permisos `0700` para directorios y `0600` para archivos; el script rechaza ficheros de configuración, perfil o secreto demasiado abiertos. La contraseña SMTP se guarda como texto dentro del sandbox privado de Termux; el script no añade cifrado independiente al archivo.
 - El script no escribe el cuerpo en su propio historial ni en su registro de estado. El estado conserva fechas y huellas SHA-256, no el cuerpo ni el asunto generado. La deduplicación es exacta por huella; no demuestra que dos textos distintos no traten la misma idea.
 - El bloqueo de proceso impide dos ejecuciones concurrentes. Una fecha ya enviada no vuelve a enviarse automáticamente.
 - El cuerpo permanece en memoria durante la generación y el envío. No debe redirigirse `--preview` a archivos de registro.
@@ -49,7 +49,7 @@ nyx-email-daily --preview
 nyx-email-daily --send
 ```
 
-- `--check`: comprueba la API local de Qwen, detecta el modelo servido y valida el perfil/configuración. No genera ni envía correo.
+- `--check`: comprueba la API local de Qwen, detecta el modelo servido, valida el perfil/configuración y confirma que el archivo privado de credenciales SMTP existe y tiene permisos restrictivos. No prueba el inicio de sesión SMTP, no genera ni envía correo.
 - `--preview`: genera y muestra el borrador, sin enviarlo ni guardarlo. La salida puede quedar registrada por el terminal si se redirige; no la redirijas a logs.
 - `--send`: genera y envía el correo. El asunto es deliberadamente genérico (`P.D. privada · fecha`) para no exponer el tema en los metadatos del correo.
 
