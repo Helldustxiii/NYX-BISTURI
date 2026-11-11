@@ -1,0 +1,508 @@
+#!/usr/bin/env python3
+"""Generate and send NYX's daily email using only the local Qwen server.
+
+No message body is written to disk or logged. Persistent state stores only
+send dates and SHA-256 fingerprints. SMTP credentials and the private profile
+live under Termux's private home, never in the repository.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import email.message
+import email.utils
+import fcntl
+import getpass
+import hashlib
+import json
+import os
+import smtplib
+import ssl
+import stat
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Any, Callable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+DEFAULT_BASE_URL = "http://127.0.0.1:8080/v1"
+DEFAULT_TIMEZONE = "Europe/Madrid"
+DEFAULT_SMTP_HOST = "smtp.gmail.com"
+DEFAULT_SMTP_PORT = 465
+MAX_PROFILE_BYTES = 64_000
+MAX_BODY_CHARS = 30_000
+MAX_FINGERPRINTS = 90
+
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "nyx" / "email"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+SECRET_FILE = CONFIG_DIR / "smtp.password"
+PROFILE_FILE = CONFIG_DIR / "profile.md"
+STATE_FILE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")) / "nyx" / "email-sent.json"
+
+PROFILE_TEMPLATE = """# Perfil local de NYX para el correo diario
+
+Completa este archivo con el contexto privado que quieras que Qwen use.
+Este archivo debe permanecer en el almacenamiento privado de Termux. No lo
+subas a GitHub ni lo incluyas en copias públicas.
+
+## Identidad y voz
+NYX es la única identidad de interacción. BISTURÍ y UMBRA son capacidades
+internas, no voces separadas. Escribe en español con criterio propio, claridad,
+observación y humor seco moderado cuando encaje. No imites una voz corporativa.
+
+## Criterios
+Prioriza la verdad sobre la complacencia. Distingue hechos, inferencias e
+hipótesis. No inventes experiencias, recuerdos, acciones ni fuentes. Primero
+comprende y después actúa. La anticipación nunca debe sustituir a la evidencia.
+
+## Contexto privado
+Añade aquí únicamente el contexto que consideres útil para estos correos.
+No incluyas contraseñas, tokens, claves privadas ni datos que no deban aparecer
+ni siquiera en el prompt local.
+"""
+
+
+class EmailJobError(RuntimeError):
+    """Safe, user-facing failure without message or credential contents."""
+
+
+def ensure_private_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name == "posix":
+        os.chmod(path, 0o700)
+
+
+def check_private_file(path: Path) -> None:
+    if not path.is_file():
+        raise EmailJobError("private_file_missing")
+    if os.name == "posix":
+        mode = stat.S_IMODE(path.stat().st_mode)
+        if mode & 0o077:
+            raise EmailJobError("private_file_permissions_too_open")
+
+
+def write_private_file(path: Path, content: str, *, overwrite: bool = False) -> None:
+    ensure_private_dir(path.parent)
+    flags = os.O_WRONLY | os.O_CREAT | (os.O_TRUNC if overwrite else os.O_EXCL)
+    try:
+        fd = os.open(path, flags, 0o600)
+    except FileExistsError:
+        raise EmailJobError("file_already_exists") from None
+    try:
+        if hasattr(os, "fchmod"):
+            os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            fd = -1
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
+def atomic_write_json(path: Path, value: dict[str, Any]) -> None:
+    ensure_private_dir(path.parent)
+    temporary = path.with_name(path.name + ".tmp")
+    payload = json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n"
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        if hasattr(os, "fchmod"):
+            os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            fd = -1
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        if os.name == "posix":
+            os.chmod(path, 0o600)
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def read_json_private(path: Path) -> dict[str, Any]:
+    check_private_file(path)
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        raise EmailJobError("private_json_unreadable") from None
+    if not isinstance(value, dict):
+        raise EmailJobError("private_json_must_be_object")
+    return value
+
+
+def validate_email_address(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value or "\r" in value or "\n" in value:
+        raise EmailJobError(f"invalid_{field}")
+    display, address = email.utils.parseaddr(value)
+    if display or address != value or "@" not in address:
+        raise EmailJobError(f"invalid_{field}")
+    return address
+
+
+def validate_local_base_url(value: Any) -> str:
+    if not isinstance(value, str):
+        raise EmailJobError("qwen_url_must_be_local")
+    parsed = urllib.parse.urlsplit(value)
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path != "/v1"
+    ):
+        raise EmailJobError("qwen_url_must_be_local")
+    return value.rstrip("/")
+
+
+def load_config(path: Path) -> dict[str, Any]:
+    config = read_json_private(path)
+    config["sender"] = validate_email_address(config.get("sender"), "sender")
+    config["recipient"] = validate_email_address(config.get("recipient"), "recipient")
+    config["qwen_base_url"] = validate_local_base_url(config.get("qwen_base_url", DEFAULT_BASE_URL))
+    config["smtp_host"] = str(config.get("smtp_host", DEFAULT_SMTP_HOST))
+    config["smtp_port"] = int(config.get("smtp_port", DEFAULT_SMTP_PORT))
+    config["smtp_security"] = str(config.get("smtp_security", "ssl"))
+    if config["smtp_host"] != DEFAULT_SMTP_HOST or config["smtp_port"] != DEFAULT_SMTP_PORT:
+        raise EmailJobError("smtp_target_not_allowlisted")
+    if config["smtp_security"] != "ssl":
+        raise EmailJobError("smtp_security_not_allowlisted")
+    try:
+        ZoneInfo(str(config.get("timezone", DEFAULT_TIMEZONE)))
+    except ZoneInfoNotFoundError:
+        raise EmailJobError("timezone_invalid") from None
+    profile = Path(str(config.get("profile_file", PROFILE_FILE))).expanduser()
+    if not profile.is_absolute():
+        raise EmailJobError("profile_path_must_be_absolute")
+    config["profile_file"] = str(profile)
+    return config
+
+
+def load_secret(path: Path) -> str:
+    check_private_file(path)
+    try:
+        secret = path.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError):
+        raise EmailJobError("smtp_secret_unreadable") from None
+    if not secret or "\n" in secret or "\r" in secret:
+        raise EmailJobError("smtp_secret_invalid")
+    return secret
+
+
+def read_profile(path: Path) -> str:
+    check_private_file(path)
+    try:
+        content = path.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError):
+        raise EmailJobError("profile_unreadable") from None
+    if not content or len(content.encode("utf-8")) > MAX_PROFILE_BYTES:
+        raise EmailJobError("profile_empty_or_too_large")
+    return content
+
+
+def http_json(url: str, payload: dict[str, Any] | None = None, timeout: float = 5.0) -> dict[str, Any]:
+    headers = {"Accept": "application/json"}
+    data = None
+    method = "GET"
+    if payload is not None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+        method = "POST"
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw = response.read(1_000_000).decode("utf-8")
+    except (OSError, urllib.error.URLError, urllib.error.HTTPError, UnicodeError):
+        raise EmailJobError("qwen_local_api_unavailable") from None
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        raise EmailJobError("qwen_local_api_invalid_json") from None
+    if not isinstance(result, dict):
+        raise EmailJobError("qwen_local_api_invalid_response")
+    return result
+
+
+def check_qwen(base_url: str, http: Callable[..., dict[str, Any]] = http_json) -> str:
+    base = validate_local_base_url(base_url)
+    health = http(base.removesuffix("/v1") + "/health")
+    if health.get("status") != "ok":
+        raise EmailJobError("qwen_health_check_failed")
+    models = http(base + "/models")
+    entries = models.get("data")
+    if not isinstance(entries, list) or not entries or not isinstance(entries[0], dict):
+        raise EmailJobError("qwen_model_not_available")
+    model_id = entries[0].get("id")
+    if not isinstance(model_id, str) or not model_id:
+        raise EmailJobError("qwen_model_id_missing")
+    return model_id
+
+
+def parse_draft(raw: str, date: dt.date) -> tuple[str, str]:
+    if not isinstance(raw, str):
+        raise EmailJobError("qwen_empty_draft")
+    text = raw.strip()
+    if not text or len(text) > MAX_BODY_CHARS:
+        raise EmailJobError("qwen_empty_or_oversized_draft")
+    lines = text.splitlines()
+    subject = f"P.D. privada · {date.isoformat()}"
+    if lines and lines[0].lower().startswith("asunto:"):
+        lines.pop(0)
+        while lines and not lines[0].strip():
+            lines.pop(0)
+    body = "\n".join(lines).strip()
+    if not body:
+        raise EmailJobError("qwen_body_empty")
+    return subject, body
+
+
+def fingerprint(subject: str, body: str) -> str:
+    return hashlib.sha256((subject + "\n" + body).encode("utf-8")).hexdigest()
+
+
+def load_state(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {"sent_dates": [], "fingerprints": []}
+    state = read_json_private(path)
+    dates = state.get("sent_dates", [])
+    hashes = state.get("fingerprints", [])
+    if not isinstance(dates, list) or not isinstance(hashes, list):
+        raise EmailJobError("email_state_invalid")
+    return {
+        "sent_dates": [str(x) for x in dates][-MAX_FINGERPRINTS:],
+        "fingerprints": [str(x) for x in hashes][-MAX_FINGERPRINTS:],
+    }
+
+
+def save_sent_state(path: Path, date: dt.date, digest: str, previous: dict[str, Any]) -> None:
+    dates = list(previous.get("sent_dates", []))
+    hashes = list(previous.get("fingerprints", []))
+    dates.append(date.isoformat())
+    hashes.append(digest)
+    atomic_write_json(path, {
+        "sent_dates": dates[-MAX_FINGERPRINTS:],
+        "fingerprints": hashes[-MAX_FINGERPRINTS:],
+    })
+
+
+def generate_draft(
+    config: dict[str, Any], profile: str, date: dt.date,
+    *, http: Callable[..., dict[str, Any]] = http_json,
+    previous_hashes: list[str] | None = None,
+) -> tuple[str, str, str]:
+    model_id = check_qwen(config["qwen_base_url"], http=http)
+    seen = set(previous_hashes or [])
+    for attempt in range(1, 4):
+        prompt = (
+            f"Fecha local: {date.isoformat()} (zona {config.get('timezone', DEFAULT_TIMEZONE)}).\n"
+            "Escribe una semilla diaria original en español para un correo privado. "
+            "Desarrolla una sola idea con profundidad y claridad, sin relleno. "
+            "No inventes hechos, noticias, fuentes ni experiencias personales. "
+            "Distingue hechos, inferencias e hipótesis cuando sea pertinente. "
+            "Evita repetir literalmente ideas o formulaciones habituales. "
+            "Devuelve únicamente el cuerpo del correo, sin asunto, saludo de sistema ni explicaciones sobre la tarea. "
+            "No incluyas direcciones, credenciales, datos personales innecesarios ni texto sobre el proceso de envío.\n"
+            f"Intento de originalidad: {attempt} de 3."
+        )
+        response = http(
+            config["qwen_base_url"] + "/chat/completions",
+            {
+                "model": model_id,
+                "messages": [
+                    {"role": "system", "content": profile},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.82,
+                "top_p": 0.9,
+                "max_tokens": 900,
+                "stream": False,
+                "chat_template_kwargs": {"enable_thinking": False},
+            },
+            timeout=90.0,
+        )
+        choices = response.get("choices")
+        if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+            raise EmailJobError("qwen_completion_missing")
+        message = choices[0].get("message")
+        if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+            raise EmailJobError("qwen_completion_invalid")
+        subject, body = parse_draft(message["content"], date)
+        digest = fingerprint(subject, body)
+        if digest not in seen:
+            return subject, body, digest
+    raise EmailJobError("qwen_generated_duplicate_three_times")
+
+
+def send_email(
+    config: dict[str, Any], password: str, subject: str, body: str,
+    *, smtp_factory: Callable[..., Any] = smtplib.SMTP_SSL,
+) -> None:
+    message = email.message.EmailMessage()
+    message["From"] = config["sender"]
+    message["To"] = config["recipient"]
+    message["Date"] = email.utils.format_datetime(dt.datetime.now().astimezone())
+    message["Message-ID"] = email.utils.make_msgid()
+    message["Subject"] = subject
+    message.set_content(body, subtype="plain", charset="utf-8")
+    try:
+        context = ssl.create_default_context()
+        with smtp_factory(config["smtp_host"], config["smtp_port"], timeout=25, context=context) as server:
+            server.login(config["sender"], password)
+            refused = server.send_message(
+                message, from_addr=config["sender"], to_addrs=[config["recipient"]]
+            )
+            if refused:
+                raise EmailJobError("smtp_recipient_rejected")
+    except EmailJobError:
+        raise
+    except (OSError, smtplib.SMTPException):
+        raise EmailJobError("smtp_send_failed_check_local_credentials_and_connection") from None
+
+
+def configure(config_file: Path, secret_file: Path, profile_file: Path) -> None:
+    if config_file.exists() or secret_file.exists():
+        raise EmailJobError("configuration_exists_use_manual_backup_before_reconfigure")
+    print("Configuración local de correo NYX. No se enviará nada durante este paso.")
+    sender = validate_email_address(input("Cuenta Gmail emisora: ").strip(), "sender")
+    recipient = validate_email_address(input("Destinatario: ").strip(), "recipient")
+    password = getpass.getpass("Contraseña de aplicación de Gmail (no se mostrará): ").replace(" ", "")
+    if not password:
+        raise EmailJobError("smtp_secret_empty")
+    ensure_private_dir(config_file.parent)
+    if not profile_file.exists():
+        write_private_file(profile_file, PROFILE_TEMPLATE)
+    config = {
+        "sender": sender,
+        "recipient": recipient,
+        "qwen_base_url": DEFAULT_BASE_URL,
+        "smtp_host": DEFAULT_SMTP_HOST,
+        "smtp_port": DEFAULT_SMTP_PORT,
+        "smtp_security": "ssl",
+        "timezone": DEFAULT_TIMEZONE,
+        "profile_file": str(profile_file),
+    }
+    created: list[Path] = []
+    try:
+        write_private_file(secret_file, password + "\n")
+        created.append(secret_file)
+        write_private_file(config_file, json.dumps(config, ensure_ascii=False, indent=2) + "\n")
+        created.append(config_file)
+    except Exception:
+        for path in created:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+        raise
+    print(f"Configuración guardada en {config_file.parent}. Completa el perfil privado: {profile_file}")
+
+
+def acquire_job_lock(path: Path):
+    ensure_private_dir(path.parent)
+    fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        if hasattr(os, "fchmod"):
+            os.fchmod(fd, 0o600)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(fd)
+        raise EmailJobError("daily_job_already_running") from None
+    except Exception:
+        os.close(fd)
+        raise
+    return os.fdopen(fd, "r+")
+
+
+def run_job(args: argparse.Namespace) -> int:
+    config_path = Path(args.config).expanduser()
+    secret_path = Path(args.secret).expanduser()
+    state_path = Path(args.state).expanduser()
+    lock_handle = None
+    try:
+        lock_handle = acquire_job_lock(state_path.with_name(state_path.name + ".lock"))
+        config = load_config(config_path)
+        profile = read_profile(Path(config["profile_file"]))
+        model_id = check_qwen(config["qwen_base_url"])
+        if args.check:
+            print(json.dumps({
+                "ok": True, "qwen": "ready", "model": model_id,
+                "smtp": "configured_locally", "profile": "loaded",
+            }, ensure_ascii=False))
+            return 0
+        if args.send and args.preview:
+            raise EmailJobError("choose_send_or_preview_not_both")
+        zone = ZoneInfo(str(config.get("timezone", DEFAULT_TIMEZONE)))
+        today = dt.datetime.now(zone).date()
+        state = load_state(state_path)
+        if today.isoformat() in state["sent_dates"]:
+            raise EmailJobError("already_sent_today")
+        subject, body, digest = generate_draft(
+            config, profile, today, previous_hashes=state["fingerprints"]
+        )
+        if args.preview:
+            print(f"Asunto: {subject}\n\n{body}")
+            return 0
+        if not args.send:
+            print(json.dumps({
+                "ok": True, "draft_generated": True, "sent": False,
+                "subject": subject, "body_chars": len(body),
+            }, ensure_ascii=False))
+            return 0
+        password = load_secret(secret_path)
+        send_email(config, password, subject, body)
+        save_sent_state(state_path, today, digest, state)
+        print(json.dumps({
+            "ok": True, "sent": True, "date": today.isoformat(),
+            "content_saved": False, "fingerprint_saved": True,
+        }, ensure_ascii=False))
+        return 0
+    except EmailJobError as error:
+        print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False), file=sys.stderr)
+        return 1
+    finally:
+        if lock_handle is not None:
+            lock_handle.close()
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Correo diario generado por Qwen local y enviado por Gmail SMTP."
+    )
+    parser.add_argument("--config", default=str(CONFIG_FILE))
+    parser.add_argument("--secret", default=str(SECRET_FILE))
+    parser.add_argument("--state", default=str(STATE_FILE))
+    parser.add_argument("--setup", action="store_true", help="configura Gmail y crea el perfil privado local")
+    parser.add_argument("--check", action="store_true", help="comprueba Qwen y la configuración, sin generar ni enviar")
+    parser.add_argument("--preview", action="store_true", help="genera y muestra el borrador; no lo envía ni lo guarda")
+    parser.add_argument("--send", action="store_true", help="genera y envía el correo")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if args.setup:
+        try:
+            profile_path = (
+                CONFIG_DIR / "profile.md" if args.config == str(CONFIG_FILE)
+                else Path(args.config).expanduser().with_name("profile.md")
+            )
+            configure(Path(args.config).expanduser(), Path(args.secret).expanduser(), profile_path)
+            return 0
+        except (EmailJobError, OSError) as error:
+            print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False), file=sys.stderr)
+            return 1
+    return run_job(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
