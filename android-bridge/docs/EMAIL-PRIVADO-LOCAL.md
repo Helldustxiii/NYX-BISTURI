@@ -31,7 +31,7 @@ install -m 700 android-bridge/tools/nyx-email-daily "$HOME/bin/nyx-email-daily"
 "$HOME/bin/nyx-email-daily" --setup
 ```
 
-`--setup` pide la cuenta emisora, el destinatario y una contraseña de aplicación de Gmail mediante entrada oculta. No pegues esa contraseña en ChatGPT ni la guardes en el repositorio. Para usar contraseñas de aplicación, la cuenta de Google debe tener activada la verificación en dos pasos y permitir generar una contraseña. Google las considera menos seguras que el inicio de sesión mediante OAuth y recomienda usar `Sign in with Google` cuando esté disponible. [Ayuda oficial de Google](https://support.google.com/accounts/answer/ the-app-passwords-help).
+`--setup` pide la cuenta emisora, el destinatario y una contraseña de aplicación de Gmail mediante entrada oculta. No pegues esa contraseña en ChatGPT ni la guardes en el repositorio. Para usar contraseñas de aplicación, la cuenta de Google debe tener activada la verificación en dos pasos y permitir generar una contraseña. Google las considera menos seguras que el inicio de sesión mediante OAuth y recomienda usar `Sign in with Google` cuando esté disponible. [Ayuda oficial de Google](https://support.google.com/accounts/answer/185833).
 
 El asistente crea:
 
