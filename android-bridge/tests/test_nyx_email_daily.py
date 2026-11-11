@@ -20,8 +20,8 @@ class PrivateFileTests(unittest.TestCase):
     def test_private_file_is_created_with_restricted_permissions(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = pathlib.Path(tmp) / "private" / "secret.txt"
-            EMAIL.write_private_file(target, "secret\\n")
-            self.assertEqual(target.read_text(), "secret\\n")
+            EMAIL.write_private_file(target, "secret\n")
+            self.assertEqual(target.read_text(), "secret\n")
             if os.name == "posix":
                 self.assertEqual(target.stat().st_mode & 0o777, 0o600)
                 self.assertEqual(target.parent.stat().st_mode & 0o777, 0o700)
@@ -122,11 +122,11 @@ class ConfigurationTests(unittest.TestCase):
 class DraftTests(unittest.TestCase):
     def test_parse_draft_extracts_subject_and_body(self):
         subject, body = EMAIL.parse_draft(
-            "Asunto: Una idea distinta\\n\\nPrimera línea.\\nSegunda línea.",
+            "Asunto: Una idea distinta\n\nPrimera línea.\nSegunda línea.",
             dt.date(2026, 11, 11),
         )
         self.assertEqual(subject, "P.D. privada · 2026-11-11")
-        self.assertEqual(body, "Primera línea.\\nSegunda línea.")
+        self.assertEqual(body, "Primera línea.\nSegunda línea.")
 
     def test_parse_draft_uses_nonrevealing_default_subject(self):
         subject, body = EMAIL.parse_draft(
