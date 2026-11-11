@@ -214,7 +214,7 @@ class SecretTests(unittest.TestCase):
     def test_secret_is_loaded_from_a_private_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = pathlib.Path(tmp) / "smtp.password"
-            EMAIL.write_private_file(path, "local-test-secret\\n")
+            EMAIL.write_private_file(path, "local-test-secret\n")
             self.assertEqual(EMAIL.load_secret(path), "local-test-secret")
 
     def test_secret_file_with_open_permissions_is_rejected(self):
