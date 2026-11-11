@@ -10,7 +10,7 @@ El script es independiente del lector único del protocolo 770 y no consume las 
 
 ## Límites de privacidad
 
-- La URL de Qwen queda fijada a `http://127.0.0.1:8080/v1`. El cliente desactiva proxies del entorno, rechaza endpoints remotos y bloquea redirecciones fuera de `127.0.0.1`.
+- La URL de Qwen queda fijada a `http://127.0.0.1:8080/v1`. El cliente desactiva proxies del entorno, rechaza endpoints remotos y bloquea redirecciones fuera de `127.0.0.1`. llama.cpp usa `127.0.0.1` como host predeterminado; no lo cambies a `0.0.0.0` y comprueba que `LLAMA_ARG_HOST` no lo sobrescriba.
 - El perfil, la configuración y la contraseña de aplicación viven en el directorio privado de Termux, nunca en GitHub.
 - Los archivos privados se crean con permisos `0700` para directorios y `0600` para archivos; el script rechaza ficheros de configuración, perfil o secreto demasiado abiertos.
 - El script no escribe el cuerpo en su propio historial ni en su registro de estado. El estado conserva fechas y huellas SHA-256, no el cuerpo ni el asunto generado. La deduplicación es exacta por huella; no demuestra que dos textos distintos no traten la misma idea.
