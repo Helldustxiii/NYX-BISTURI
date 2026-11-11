@@ -186,6 +186,15 @@ class DraftTests(unittest.TestCase):
         )
         self.assertEqual(result[1], "Texto distinto.")
 
+    def test_fingerprint_ignores_the_date_in_the_subject(self):
+        first = EMAIL.fingerprint(
+            "P.D. privada · 2026-11-11", "La misma reflexión."
+        )
+        next_day = EMAIL.fingerprint(
+            "P.D. privada · 2026-11-12", "La misma reflexión."
+        )
+        self.assertEqual(first, next_day)
+
     def test_sent_state_persists_only_dates_and_hashes(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = pathlib.Path(tmp) / "state.json"
