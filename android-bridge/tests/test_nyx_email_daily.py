@@ -210,6 +210,22 @@ class DraftTests(unittest.TestCase):
                 self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
 
+class SecretTests(unittest.TestCase):
+    def test_secret_is_loaded_from_a_private_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "smtp.password"
+            EMAIL.write_private_file(path, "local-test-secret\n")
+            self.assertEqual(EMAIL.load_secret(path), "local-test-secret")
+
+    def test_secret_file_with_open_permissions_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "smtp.password"
+            path.write_text("local-test-secret")
+            os.chmod(path, 0o644)
+            with self.assertRaisesRegex(EMAIL.EmailJobError, "permissions_too_open"):
+                EMAIL.load_secret(path)
+
+
 class SmtpTests(unittest.TestCase):
     def test_send_uses_tls_and_does_not_return_or_log_message_body(self):
         captured = {}
