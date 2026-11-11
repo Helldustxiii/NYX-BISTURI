@@ -448,9 +448,14 @@ def run_job(args: argparse.Namespace) -> int:
         profile = read_profile(Path(config["profile_file"]))
         model_id = check_qwen(config["qwen_base_url"])
         if args.check:
+            load_secret(secret_path)
             print(json.dumps({
-                "ok": True, "qwen": "ready", "model": model_id,
-                "smtp": "configured_locally", "profile": "loaded",
+                "ok": True,
+                "qwen": "ready",
+                "model": model_id,
+                "smtp_credentials": "present",
+                "smtp_authentication": "not_tested",
+                "profile": "loaded",
             }, ensure_ascii=False))
             return 0
         if args.send and args.preview:
