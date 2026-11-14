@@ -12,6 +12,8 @@ El paquete Android com.nyx.bridge pasa a ser la aplicación principal **NYX**. L
 
 No se crea una segunda app.
 
+El Content Provider de `com.nyx.bridge` responde a `ping` y `device_info` con `bridge_version=0.2`.
+
 ## Arquitectura de conversación
 
 ~~~text
