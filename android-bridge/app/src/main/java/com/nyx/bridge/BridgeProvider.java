@@ -10,6 +10,7 @@ import android.os.Bundle;
 public class BridgeProvider extends ContentProvider {
 
     public static final String AUTHORITY = "com.nyx.bridge.provider";
+    public static final String BRIDGE_VERSION = "0.2";
 
     @Override
     public boolean onCreate() {
@@ -23,7 +24,7 @@ public class BridgeProvider extends ContentProvider {
         if ("ping".equals(method)) {
             result.putString("status", "ok");
             result.putString("response", "pong");
-            result.putString("bridge_version", "0.1");
+            result.putString("bridge_version", BRIDGE_VERSION);
             result.putString("transport", "content_provider");
             return result;
         }
@@ -35,7 +36,7 @@ public class BridgeProvider extends ContentProvider {
             result.putInt("sdk_int", Build.VERSION.SDK_INT);
             result.putString("release", Build.VERSION.RELEASE);
             result.putString("package", requireContext().getPackageName());
-            result.putString("bridge_version", "0.1");
+            result.putString("bridge_version", BRIDGE_VERSION);
             return result;
         }
 
