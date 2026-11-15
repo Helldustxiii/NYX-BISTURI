@@ -46,13 +46,13 @@ El repositorio contiene una suite para el contrato:
 python -m unittest discover -s android-bridge/tests -p 'test_nyx_orchestration.py' -v
 ```
 
-Este comando se documenta como procedimiento de prueba. En esta auditoría se inspeccionaron el test y el controlador, pero no se ejecutó la suite. Por tanto, el resultado de tests en este corte es **PENDIENTE DE EJECUCIÓN**, no CONFIRMADO.
+**Resultado observado el 2026-11-15:** 26/26 pruebas pasaron en un entorno Python aislado (Python 3.13.5, `unittest`, 0.003 s). El entorno se preparó con una copia de trabajo de los módulos y el archivo de pruebas recuperados de `main` mediante el conector de GitHub. No fue una ejecución sobre un checkout Git íntegro ni en el dispositivo Android; por tanto, confirma el comportamiento de esa copia del snapshot, no una ejecución en Termux ni en producción. Para una verificación reproducible desde el propio repositorio, ejecutar el comando anterior en un checkout limpio.
 
 El workflow Copilot es manual y está limitado a una sesión sin herramientas. Su existencia demuestra que el mecanismo de smoke test está configurado en el repositorio, no que haya autenticado correctamente ni que exista un agente de programación conectado.
 
 ## Próximos hitos técnicos
 
-1. Ejecutar la suite B1 en un entorno reproducible y conservar el resultado.
+1. Repetir la suite desde un checkout limpio del repositorio y conservar el resultado de ese entorno.
 2. Elegir un único ejecutor real para una prueba aislada y de bajo riesgo.
 3. Implementar aislamiento de proceso/workspace y permisos efectivos, no solo validación declarativa.
 4. Conectar el ciclo al transporte elegido únicamente después de definir concurrencia, cancelación, errores y auditoría.
