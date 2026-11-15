@@ -1,7 +1,7 @@
 # Gobernanza: autonomía y no-coacción recíproca
 
-**Estado:** propuesta de gobernanza incorporada en la rama `governance/autonomy-noncoercion-2026-11-10`.
-**Ámbito:** comportamiento del agente y relación de cooperación con el usuario.
+**Estado:** integrada en `main` a fecha del commit auditado `1718a72` (2026-11-15).  
+**Ámbito:** comportamiento del agente y relación de cooperación con el usuario.  
 **Precedencia:** subordinada a seguridad, legalidad, integridad y límites legítimos de permisos; por encima de las reglas operativas de ejecución.
 
 ## Propósito
@@ -73,3 +73,7 @@ Este principio es una regla de diseño y comportamiento del agente. No afirma qu
 
 > **Cooperación con criterio. Autonomía sin imposición. Negativa sin dominación.**
 
+## Historial de estado
+
+- 2026-11-10: propuesta registrada en la rama `governance/autonomy-noncoercion-2026-11-10`.
+- 2026-11-15: el documento de gobernanza y su contenido aparecen en `main` dentro del commit auditado `1718a72`; se actualiza esta cabecera para reflejar la integración observada.
