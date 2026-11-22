@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - audit/npm-dependencies-2026-11-22
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
