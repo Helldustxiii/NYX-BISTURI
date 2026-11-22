@@ -1,0 +1,51 @@
+name: Temporary dependency audit
+
+on:
+  push:
+    branches:
+      - audit/npm-dependencies-2026-11-22
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run npm audit and summarize advisories
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > audit.json
+          audit_status=$?
+          set -e
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+          const entries = Object.entries(report.vulnerabilities || {}).map(([name, v]) => ({
+            name,
+            severity: v.severity,
+            direct: v.isDirect,
+            range: v.range,
+            fixAvailable: v.fixAvailable,
+            via: (v.via || []).map(x => typeof x === 'string' ? x : ({
+              title: x.title,
+              url: x.url,
+              range: x.range,
+              severity: x.severity
+            }))
+          }));
+          console.log(JSON.stringify({
+            metadata: report.metadata?.vulnerabilities,
+            packages: entries
+          }, null, 2));
+          NODE
+          echo "npm audit exit status: $audit_status"
